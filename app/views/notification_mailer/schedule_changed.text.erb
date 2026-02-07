@@ -1,0 +1,13 @@
+SCHEDULE UPDATED!
+
+The schedule for <%= @monitored_url.name %> has been updated.
+
+URL: <%= @monitored_url.url %>
+
+WHAT CHANGED (AI Analysis):
+<%= @new_snapshot.ai_summary %>
+
+Checked at: <%= @new_snapshot.checked_at.strftime("%B %d, %Y at %I:%M %p") %>
+
+---
+You're receiving this email because you're monitoring this URL in Schedule Alert.

@@ -1,0 +1,22 @@
+<h1>Schedule Updated!</h1>
+
+<p>The schedule for <strong><%= @monitored_url.name %></strong> has been updated.</p>
+
+<p><strong>URL:</strong> <%= link_to @monitored_url.url, @monitored_url.url %></p>
+
+<h2>What Changed (AI Analysis):</h2>
+<div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
+  <%= simple_format @new_snapshot.ai_summary %>
+</div>
+
+<p>
+  <strong>Checked at:</strong> <%= @new_snapshot.checked_at.strftime("%B %d, %Y at %I:%M %p") %>
+</p>
+
+<hr style="margin: 30px 0;">
+
+<p style="color: #666; font-size: 12px;">
+  You're receiving this email because you're monitoring this URL in Schedule Alert.
+  <br>
+  To manage your monitored URLs, visit your dashboard.
+</p>
