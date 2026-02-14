@@ -5,7 +5,7 @@ class MonitoredUrlsController < ApplicationController
   def index
     @monitored_urls = current_user.monitored_urls.order(created_at: :desc)
     @monitored_url = MonitoredUrl.new
-    
+
     respond_to do |format|
       format.html
       format.json do
@@ -15,9 +15,9 @@ class MonitoredUrlsController < ApplicationController
                               .where(changes_detected: true)
                               .order(checked_at: :desc)
                               .limit(10)
-        
+
         render json: {
-          monitored_urls: @monitored_urls.as_json(only: [:id, :name, :url, :notification_email, :schedule_available, :last_checked_at, :active]),
+          monitored_urls: @monitored_urls.as_json(only: [:id, :name, :url, :notification_email, :schedule_available, :last_checked_at, :active, :tournament_start_date, :next_check_at]),
           recent_snapshots: @recent_snapshots.as_json(only: [:id, :ai_summary, :checked_at])
         }
       end
@@ -26,7 +26,7 @@ class MonitoredUrlsController < ApplicationController
 
   def create
     @monitored_url = current_user.monitored_urls.build(monitored_url_params)
-    
+
     if @monitored_url.save
       # Queue a job to check this URL immediately
       UrlCheckJob.perform_later(@monitored_url.id)
@@ -62,6 +62,6 @@ class MonitoredUrlsController < ApplicationController
   end
 
   def monitored_url_params
-    params.require(:monitored_url).permit(:url, :name, :notification_email, :active)
+    params.require(:monitored_url).permit(:url, :name, :notification_email, :active, :tournament_start_date)
   end
 end

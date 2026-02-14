@@ -1,23 +1,23 @@
 Rails.application.routes.draw do
   devise_for :users
-  
+
   # Authenticated routes
   authenticate :user do
     root "dashboard#index", as: :authenticated_root
     get "dashboard", to: "dashboard#index"
-    
+
     resources :monitored_urls, only: [:index, :create, :destroy, :update] do
       member do
         post :check_now
       end
     end
   end
-  
+
   # Unauthenticated root
   devise_scope :user do
     root "devise/sessions#new"
   end
-  
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

@@ -8,7 +8,8 @@ export default {
       newUrl: {
         name: '',
         url: '',
-        notification_email: ''
+        notification_email: '',
+        tournament_start_date: ''
       }
     }
   },
@@ -29,8 +30,8 @@ export default {
       }
     },
     async addUrl() {
-      if (!this.newUrl.name || !this.newUrl.url) {
-        alert('Please fill in both name and URL')
+      if (!this.newUrl.name || !this.newUrl.url || !this.newUrl.tournament_start_date) {
+        alert('Please fill in name, URL, and tournament start date')
         return
       }
 
@@ -45,7 +46,7 @@ export default {
         })
 
         if (response.ok) {
-          this.newUrl = { name: '', url: '', notification_email: '' }
+          this.newUrl = { name: '', url: '', notification_email: '', tournament_start_date: '' }
           this.loadData()
           alert('URL added successfully!')
         } else {
@@ -99,6 +100,29 @@ export default {
     formatDate(dateString) {
       if (!dateString) return 'Never'
       return new Date(dateString).toLocaleString()
+    },
+    formatSimpleDate(dateString) {
+      if (!dateString) return 'Not set'
+      return new Date(dateString).toLocaleDateString()
+    },
+    daysUntilTournament(tournamentDate) {
+      if (!tournamentDate) return null
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const tournament = new Date(tournamentDate)
+      tournament.setHours(0, 0, 0, 0)
+      const diffTime = tournament - today
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      return diffDays
+    },
+    getCheckFrequency(tournamentDate) {
+      const days = this.daysUntilTournament(tournamentDate)
+      if (days === null || days < 0) return 'Not scheduled'
+      if (days <= 1) return '5x daily (9am, 12pm, 3pm, 6pm, 10pm PT)'
+      if (days <= 4) return '4x daily (9am, 12pm, 5pm, 10pm PT)'
+      if (days <= 7) return '3x daily (9am, 3pm, 10pm PT)'
+      if (days <= 13) return '2x daily (10am, 10pm PT)'
+      return 'Once daily (10am PT)'
     }
   },
   template: `
@@ -121,6 +145,13 @@ export default {
                 <div class="mb-3">
                   <label class="form-label">URL</label>
                   <input v-model="newUrl.url" type="url" class="form-control" placeholder="https://..." required>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Tournament Start Date <span class="text-danger">*</span></label>
+                  <input v-model="newUrl.tournament_start_date" type="date" class="form-control" required>
+                  <small class="form-text text-muted">
+                    Check frequency adjusts automatically based on how soon the tournament is
+                  </small>
                 </div>
                 <div class="mb-3">
                   <label class="form-label">Notification Email (optional)</label>
@@ -153,7 +184,22 @@ export default {
                       <a :href="url.url" target="_blank" rel="noopener">{{ url.url }}</a>
                     </p>
                     <p class="text-muted small mb-0">
-                      <strong>Status:</strong> 
+                      <strong>Tournament Date:</strong> {{ formatSimpleDate(url.tournament_start_date) }}
+                      <span v-if="daysUntilTournament(url.tournament_start_date) !== null && daysUntilTournament(url.tournament_start_date) >= 0" class="badge bg-info ms-2">
+                        {{ daysUntilTournament(url.tournament_start_date) }} days away
+                      </span>
+                      <span v-else-if="daysUntilTournament(url.tournament_start_date) < 0" class="badge bg-secondary ms-2">
+                        Past
+                      </span>
+                    </p>
+                    <p class="text-muted small mb-0">
+                      <strong>Check Frequency:</strong> {{ getCheckFrequency(url.tournament_start_date) }}
+                    </p>
+                    <p class="text-muted small mb-0">
+                      <strong>Next Check:</strong> {{ formatDate(url.next_check_at) }}
+                    </p>
+                    <p class="text-muted small mb-0">
+                      <strong>Status:</strong>
                       <span v-if="url.schedule_available" class="badge bg-success">Schedule Available</span>
                       <span v-else class="badge bg-warning">Waiting for Schedule</span>
                     </p>

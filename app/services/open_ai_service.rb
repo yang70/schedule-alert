@@ -43,18 +43,18 @@ class OpenAiService
   def build_initial_check_prompt(content)
     <<~PROMPT
       Analyze this web page content to determine if it contains an actual sports tournament schedule.
-      
+
       A schedule should include:
       - Dates and/or times of games/matches
       - Team names or participant names
       - Locations or venues
       - Matchups or game details
-      
+
       If the page is mostly blank, contains "coming soon", "check back later", or doesn't have actual schedule information, it's NOT available.
-      
+
       Web page content:
       #{truncate_content(content)}
-      
+
       Respond in this exact format:
       SCHEDULE_AVAILABLE: [YES or NO]
       SUMMARY: [A brief 2-3 sentence summary of what you found. If a schedule is available, summarize the key details like dates, teams, and format. If not available, explain why.]
@@ -64,25 +64,25 @@ class OpenAiService
   def build_change_detection_prompt(current_content, previous_content)
     <<~PROMPT
       Compare these two versions of a sports tournament schedule web page to detect meaningful changes.
-      
+
       Look for changes in:
       - Game times or dates
       - Team matchups
       - Locations or venues
       - New games added or games removed
       - Any schedule-related updates
-      
+
       Ignore minor changes like:
       - Timestamps or "last updated" text
       - Advertisement content
       - Navigation or footer changes
-      
+
       PREVIOUS VERSION:
       #{truncate_content(previous_content)}
-      
+
       CURRENT VERSION:
       #{truncate_content(current_content)}
-      
+
       Respond in this exact format:
       SCHEDULE_AVAILABLE: [YES or NO - is there an actual schedule present?]
       SCHEDULE_CHANGED: [YES or NO - did the schedule information change meaningfully?]
@@ -112,7 +112,7 @@ class OpenAiService
                     .gsub(/<style.*?<\/style>/m, '')
                     .gsub(/\s+/, ' ')
                     .strip
-    
+
     if cleaned.length > max_length
       cleaned[0...max_length] + "... [truncated]"
     else

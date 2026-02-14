@@ -7,7 +7,7 @@ class UrlCheckJob < ApplicationJob
 
     # Fetch the URL content
     response = HTTParty.get(monitored_url.url, timeout: 10, follow_redirects: true)
-    
+
     return unless response.success?
 
     content = response.body
