@@ -126,114 +126,119 @@ export default {
     }
   },
   template: `
-    <div class="container mt-4">
-      <div class="row">
-        <div class="col-12">
-          <h2>My Monitored URLs</h2>
-
-          <!-- Add New URL Form -->
-          <div class="card mb-4">
-            <div class="card-header">
-              <h5>Add New URL to Monitor</h5>
-            </div>
-            <div class="card-body">
-              <form @submit.prevent="addUrl">
-                <div class="mb-3">
-                  <label class="form-label">Name/Description</label>
-                  <input v-model="newUrl.name" type="text" class="form-control" placeholder="e.g., Spring Tournament 2026" required>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">URL</label>
-                  <input v-model="newUrl.url" type="url" class="form-control" placeholder="https://..." required>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">Tournament Start Date <span class="text-danger">*</span></label>
-                  <input v-model="newUrl.tournament_start_date" type="date" class="form-control" required>
-                  <small class="form-text text-muted">
-                    Check frequency adjusts automatically based on how soon the tournament is
-                  </small>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">Notification Email (optional)</label>
-                  <input v-model="newUrl.notification_email" type="email" class="form-control" placeholder="Leave empty to use account email">
-                </div>
-                <button type="submit" class="btn btn-primary">Add URL</button>
-              </form>
-            </div>
+    <div>
+      <!-- Add New URL Form -->
+      <div class="add-url-form">
+        <h2>➕ Add New Schedule to Monitor</h2>
+        <form @submit.prevent="addUrl">
+          <div class="form-group">
+            <label>Name/Description</label>
+            <input v-model="newUrl.name" type="text" placeholder="e.g., Spring Tournament 2026" required>
           </div>
-
-          <!-- Loading State -->
-          <div v-if="loading" class="text-center">
-            <div class="spinner-border" role="status">
-              <span class="visually-hidden">Loading...</span>
-            </div>
+          <div class="form-group">
+            <label>Tournament URL</label>
+            <input v-model="newUrl.url" type="url" placeholder="https://..." required>
           </div>
+          <div class="form-group">
+            <label>Tournament Start Date <span style="color: var(--accent-color);">*</span></label>
+            <input v-model="newUrl.tournament_start_date" type="date" required>
+            <small style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-top: 0.25rem;">
+              Check frequency adjusts automatically based on proximity
+            </small>
+          </div>
+          <div class="form-group">
+            <label>Notification Email <span style="font-size: 0.75rem; color: var(--text-light);">(optional)</span></label>
+            <input v-model="newUrl.notification_email" type="email" placeholder="Leave empty to use account email">
+          </div>
+          <button type="submit" class="btn-primary">Add Schedule</button>
+        </form>
+      </div>
 
-          <!-- URLs List -->
-          <div v-else>
-            <div v-if="monitoredUrls.length === 0" class="alert alert-info">
-              No URLs are being monitored yet. Add one above to get started!
-            </div>
+      <!-- Loading State -->
+      <div v-if="loading" style="text-align: center; padding: 3rem;">
+        <div style="display: inline-block; width: 3rem; height: 3rem; border: 3px solid var(--border-color); border-top-color: var(--primary-color); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+      </div>
 
-            <div v-for="url in monitoredUrls" :key="url.id" class="card mb-3">
-              <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                  <div>
-                    <h5 class="card-title">{{ url.name }}</h5>
-                    <p class="card-text">
-                      <a :href="url.url" target="_blank" rel="noopener">{{ url.url }}</a>
-                    </p>
-                    <p class="text-muted small mb-0">
-                      <strong>Tournament Date:</strong> {{ formatSimpleDate(url.tournament_start_date) }}
-                      <span v-if="daysUntilTournament(url.tournament_start_date) !== null && daysUntilTournament(url.tournament_start_date) >= 0" class="badge bg-info ms-2">
-                        {{ daysUntilTournament(url.tournament_start_date) }} days away
-                      </span>
-                      <span v-else-if="daysUntilTournament(url.tournament_start_date) < 0" class="badge bg-secondary ms-2">
-                        Past
-                      </span>
-                    </p>
-                    <p class="text-muted small mb-0">
-                      <strong>Check Frequency:</strong> {{ getCheckFrequency(url.tournament_start_date) }}
-                    </p>
-                    <p class="text-muted small mb-0">
-                      <strong>Next Check:</strong> {{ formatDate(url.next_check_at) }}
-                    </p>
-                    <p class="text-muted small mb-0">
-                      <strong>Status:</strong>
-                      <span v-if="url.schedule_available" class="badge bg-success">Schedule Available</span>
-                      <span v-else class="badge bg-warning">Waiting for Schedule</span>
-                    </p>
-                    <p class="text-muted small mb-0">
-                      <strong>Last Checked:</strong> {{ formatDate(url.last_checked_at) }}
-                    </p>
-                    <p class="text-muted small mb-0" v-if="url.notification_email">
-                      <strong>Notifications to:</strong> {{ url.notification_email }}
-                    </p>
-                  </div>
-                  <div class="btn-group">
-                    <button @click="checkNow(url.id)" class="btn btn-sm btn-outline-primary">
-                      Check Now
-                    </button>
-                    <button @click="removeUrl(url.id)" class="btn btn-sm btn-outline-danger">
-                      Remove
-                    </button>
-                  </div>
+      <!-- URLs List -->
+      <div v-else>
+        <div v-if="monitoredUrls.length === 0" class="alert alert-info">
+          <i class="bi bi-info-circle"></i> No schedules are being monitored yet. Add one above to get started!
+        </div>
+
+        <div v-for="url in monitoredUrls" :key="url.id" class="url-card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+            <div style="flex: 1;">
+              <div class="url-title">{{ url.name }}</div>
+              <a :href="url.url" target="_blank" rel="noopener" class="url-link">
+                <i class="bi bi-link-45deg"></i> {{ url.url }}
+              </a>
+
+              <div class="url-meta">
+                <div class="meta-item">
+                  <i class="bi bi-calendar-event"></i>
+                  <span>{{ formatSimpleDate(url.tournament_start_date) }}</span>
+                  <span v-if="daysUntilTournament(url.tournament_start_date) !== null && daysUntilTournament(url.tournament_start_date) >= 0" class="badge badge-primary" style="margin-left: 0.5rem;">
+                    {{ daysUntilTournament(url.tournament_start_date) }} days away
+                  </span>
+                  <span v-else-if="daysUntilTournament(url.tournament_start_date) < 0" style="margin-left: 0.5rem; color: var(--text-light); font-size: 0.75rem;">
+                    (Past)
+                  </span>
+                </div>
+              </div>
+
+              <div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--bg-color); border-radius: var(--radius-sm); font-size: 0.875rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                  <i class="bi bi-clock"></i>
+                  <strong>Check Frequency:</strong>
+                  <span style="color: var(--primary-color);">{{ getCheckFrequency(url.tournament_start_date) }}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                  <i class="bi bi-arrow-clockwise"></i>
+                  <strong>Next Check:</strong>
+                  <span>{{ formatDate(url.next_check_at) }}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                  <i class="bi bi-check-circle"></i>
+                  <strong>Last Checked:</strong>
+                  <span>{{ formatDate(url.last_checked_at) }}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <i class="bi bi-file-text"></i>
+                  <strong>Status:</strong>
+                  <span v-if="url.schedule_available" class="badge badge-success">Schedule Available</span>
+                  <span v-else class="badge badge-warning">Waiting for Schedule</span>
+                </div>
+                <div v-if="url.notification_email" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                  <i class="bi bi-envelope"></i>
+                  <strong>Notifications:</strong>
+                  <span>{{ url.notification_email }}</span>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Recent Changes -->
-          <div v-if="recentSnapshots.length > 0" class="mt-5">
-            <h3>Recent Schedule Changes</h3>
-            <div v-for="snapshot in recentSnapshots" :key="snapshot.id" class="card mb-3">
-              <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">
-                  {{ formatDate(snapshot.checked_at) }}
-                </h6>
-                <p class="card-text">{{ snapshot.ai_summary }}</p>
-              </div>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+              <button @click="checkNow(url.id)" class="btn-outline-primary" style="white-space: nowrap; padding: 0.5rem 1rem;">
+                <i class="bi bi-arrow-repeat"></i> Check Now
+              </button>
+              <button @click="removeUrl(url.id)" class="btn-danger" style="white-space: nowrap; padding: 0.5rem 1rem;">
+                <i class="bi bi-trash"></i> Remove
+              </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Changes -->
+      <div v-if="recentSnapshots.length > 0" style="margin-top: 3rem;">
+        <div style="background: var(--card-bg); border-radius: var(--radius-lg); padding: 2rem; box-shadow: var(--shadow-sm);">
+          <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem;">
+            <i class="bi bi-clock-history"></i> Recent Schedule Changes
+          </h2>
+          <div v-for="snapshot in recentSnapshots" :key="snapshot.id" style="padding: 1rem; margin-bottom: 1rem; background: var(--bg-color); border-radius: var(--radius-md); border-left: 4px solid var(--accent-color);">
+            <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+              <i class="bi bi-calendar3"></i> {{ formatDate(snapshot.checked_at) }}
+            </div>
+            <div style="color: var(--text-primary);">{{ snapshot.ai_summary }}</div>
           </div>
         </div>
       </div>
