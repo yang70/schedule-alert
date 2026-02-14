@@ -30,10 +30,19 @@ class MonitoredUrlsController < ApplicationController
     if @monitored_url.save
       # Queue a job to check this URL immediately
       UrlCheckJob.perform_later(@monitored_url.id)
-      redirect_to dashboard_path, notice: "URL added successfully and checking now."
+
+      respond_to do |format|
+        format.html { redirect_to dashboard_path, notice: "URL added successfully and checking now." }
+        format.json { render json: @monitored_url, status: :created }
+      end
     else
-      @monitored_urls = current_user.monitored_urls.order(created_at: :desc)
-      render :index, status: :unprocessable_entity
+      respond_to do |format|
+        format.html do
+          @monitored_urls = current_user.monitored_urls.order(created_at: :desc)
+          render :index, status: :unprocessable_entity
+        end
+        format.json { render json: { errors: @monitored_url.errors.full_messages }, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -47,12 +56,20 @@ class MonitoredUrlsController < ApplicationController
 
   def destroy
     @monitored_url.destroy
-    redirect_to monitored_urls_path, notice: "URL removed successfully."
+
+    respond_to do |format|
+      format.html { redirect_to monitored_urls_path, notice: "URL removed successfully." }
+      format.json { head :ok }
+    end
   end
 
   def check_now
     UrlCheckJob.perform_later(@monitored_url.id)
-    redirect_to monitored_urls_path, notice: "Checking URL now..."
+
+    respond_to do |format|
+      format.html { redirect_to monitored_urls_path, notice: "Checking URL now..." }
+      format.json { head :ok }
+    end
   end
 
   private

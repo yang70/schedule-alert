@@ -5,12 +5,34 @@ export default {
       monitoredUrls: [],
       recentSnapshots: [],
       loading: true,
+      formCollapsed: true,
+      pastCollapsed: true,
+      showSuccessBanner: false,
+      deleteConfirmation: {
+        show: false,
+        urlId: null,
+        urlName: ''
+      },
       newUrl: {
         name: '',
         url: '',
         notification_email: '',
         tournament_start_date: ''
       }
+    }
+  },
+  computed: {
+    upcomingUrls() {
+      return this.monitoredUrls.filter(url => {
+        const days = this.daysUntilTournament(url.tournament_start_date)
+        return days === null || days >= 0
+      })
+    },
+    pastUrls() {
+      return this.monitoredUrls.filter(url => {
+        const days = this.daysUntilTournament(url.tournament_start_date)
+        return days !== null && days < 0
+      })
     }
   },
   mounted() {
@@ -40,6 +62,7 @@ export default {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
           },
           body: JSON.stringify({ monitored_url: this.newUrl })
@@ -48,7 +71,11 @@ export default {
         if (response.ok) {
           this.newUrl = { name: '', url: '', notification_email: '', tournament_start_date: '' }
           this.loadData()
-          alert('URL added successfully!')
+          this.formCollapsed = true
+          this.showSuccessBanner = true
+          setTimeout(() => {
+            this.showSuccessBanner = false
+          }, 5000)
         } else {
           alert('Failed to add URL')
         }
@@ -57,13 +84,24 @@ export default {
         alert('Error adding URL')
       }
     },
-    async removeUrl(id) {
-      if (!confirm('Are you sure you want to remove this URL?')) return
+    removeUrl(id) {
+      const url = this.monitoredUrls.find(u => u.id === id)
+      this.deleteConfirmation = {
+        show: true,
+        urlId: id,
+        urlName: url ? url.name : ''
+      }
+    },
+    async confirmDelete() {
+      const id = this.deleteConfirmation.urlId
+      this.deleteConfirmation.show = false
 
       try {
         const response = await fetch(`/monitored_urls/${id}`, {
           method: 'DELETE',
           headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
           }
         })
@@ -78,17 +116,26 @@ export default {
         alert('Error removing URL')
       }
     },
+    cancelDelete() {
+      this.deleteConfirmation = {
+        show: false,
+        urlId: null,
+        urlName: ''
+      }
+    },
     async checkNow(id) {
       try {
         const response = await fetch(`/monitored_urls/${id}/check_now`, {
           method: 'POST',
           headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
           }
         })
 
         if (response.ok) {
-          alert('Checking URL now...')
+          // Success - silently refresh
         } else {
           alert('Failed to check URL')
         }
@@ -127,10 +174,44 @@ export default {
   },
   template: `
     <div>
+      <!-- Delete Confirmation Modal -->
+      <div v-if="deleteConfirmation.show" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;" @click.self="cancelDelete">
+        <div style="background: white; border-radius: var(--radius-lg); padding: 2rem; max-width: 500px; box-shadow: var(--shadow-lg);">
+          <h3 style="margin: 0 0 1rem 0; color: var(--text-primary);">
+            <i class="bi bi-exclamation-triangle" style="color: var(--accent-color);"></i> Confirm Deletion
+          </h3>
+          <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+            Are you sure you want to remove <strong>{{ deleteConfirmation.urlName }}</strong>? This action cannot be undone.
+          </p>
+          <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+            <button @click="cancelDelete" class="btn-outline-primary" style="padding: 0.5rem 1.5rem;">
+              Cancel
+            </button>
+            <button @click="confirmDelete" class="btn-danger" style="padding: 0.5rem 1.5rem;">
+              <i class="bi bi-trash"></i> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success Banner -->
+      <transition name="fade">
+        <div v-if="showSuccessBanner" style="position: fixed; top: 20px; right: 20px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 1rem 1.5rem; border-radius: var(--radius-md); box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3); z-index: 1001; display: flex; align-items: center; gap: 0.75rem; animation: slideIn 0.3s ease-out;">
+          <i class="bi bi-check-circle-fill" style="font-size: 1.5rem;"></i>
+          <div>
+            <div style="font-weight: 600; margin-bottom: 0.125rem;">Schedule Added!</div>
+            <div style="font-size: 0.875rem; opacity: 0.95;">Monitoring will begin shortly</div>
+          </div>
+        </div>
+      </transition>
+
       <!-- Add New URL Form -->
       <div class="add-url-form">
-        <h2>➕ Add New Schedule to Monitor</h2>
-        <form @submit.prevent="addUrl">
+        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" @click="formCollapsed = !formCollapsed">
+          <h2 style="margin: 0;">➕ Add New Schedule to Monitor</h2>
+          <i :class="formCollapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up'" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+        </div>
+        <form v-show="!formCollapsed" @submit.prevent="addUrl" style="margin-top: 1.5rem;">
           <div class="form-group">
             <label>Name/Description</label>
             <input v-model="newUrl.name" type="text" placeholder="e.g., Spring Tournament 2026" required>
@@ -165,64 +246,124 @@ export default {
           <i class="bi bi-info-circle"></i> No schedules are being monitored yet. Add one above to get started!
         </div>
 
-        <div v-for="url in monitoredUrls" :key="url.id" class="url-card">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
-            <div style="flex: 1;">
-              <div class="url-title">{{ url.name }}</div>
-              <a :href="url.url" target="_blank" rel="noopener" class="url-link">
-                <i class="bi bi-link-45deg"></i> {{ url.url }}
-              </a>
+        <!-- Upcoming Tournaments -->
+        <div v-if="upcomingUrls.length > 0" style="margin-top: 2rem;">
+          <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; color: var(--primary-color);">
+            <i class="bi bi-calendar-check"></i> Upcoming Tournaments ({{ upcomingUrls.length }})
+          </h2>
+          <div v-for="url in upcomingUrls" :key="url.id" class="url-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+              <div style="flex: 1;">
+                <div class="url-title">{{ url.name }}</div>
+                <a :href="url.url" target="_blank" rel="noopener" class="url-link">
+                  <i class="bi bi-link-45deg"></i> {{ url.url }}
+                </a>
 
-              <div class="url-meta">
-                <div class="meta-item">
-                  <i class="bi bi-calendar-event"></i>
-                  <span>{{ formatSimpleDate(url.tournament_start_date) }}</span>
-                  <span v-if="daysUntilTournament(url.tournament_start_date) !== null && daysUntilTournament(url.tournament_start_date) >= 0" class="badge badge-primary" style="margin-left: 0.5rem;">
-                    {{ daysUntilTournament(url.tournament_start_date) }} days away
-                  </span>
-                  <span v-else-if="daysUntilTournament(url.tournament_start_date) < 0" style="margin-left: 0.5rem; color: var(--text-light); font-size: 0.75rem;">
-                    (Past)
-                  </span>
+                <div class="url-meta">
+                  <div class="meta-item">
+                    <i class="bi bi-calendar-event"></i>
+                    <span>{{ formatSimpleDate(url.tournament_start_date) }}</span>
+                    <span v-if="daysUntilTournament(url.tournament_start_date) !== null && daysUntilTournament(url.tournament_start_date) >= 0" class="badge badge-primary" style="margin-left: 0.5rem;">
+                      {{ daysUntilTournament(url.tournament_start_date) }} days away
+                    </span>
+                  </div>
+                </div>
+
+                <div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--bg-color); border-radius: var(--radius-sm); font-size: 0.875rem;">
+                  <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <i class="bi bi-clock"></i>
+                    <strong>Check Frequency:</strong>
+                    <span style="color: var(--primary-color);">{{ getCheckFrequency(url.tournament_start_date) }}</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    <strong>Next Check:</strong>
+                    <span>{{ formatDate(url.next_check_at) }}</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <i class="bi bi-check-circle"></i>
+                    <strong>Last Checked:</strong>
+                    <span>{{ formatDate(url.last_checked_at) }}</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="bi bi-file-text"></i>
+                    <strong>Status:</strong>
+                    <span v-if="url.schedule_available" class="badge badge-success">Schedule Available</span>
+                    <span v-else class="badge badge-warning">Waiting for Schedule</span>
+                  </div>
+                  <div v-if="url.notification_email" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                    <i class="bi bi-envelope"></i>
+                    <strong>Notifications:</strong>
+                    <span>{{ url.notification_email }}</span>
+                  </div>
                 </div>
               </div>
 
-              <div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--bg-color); border-radius: var(--radius-sm); font-size: 0.875rem;">
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                  <i class="bi bi-clock"></i>
-                  <strong>Check Frequency:</strong>
-                  <span style="color: var(--primary-color);">{{ getCheckFrequency(url.tournament_start_date) }}</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                  <i class="bi bi-arrow-clockwise"></i>
-                  <strong>Next Check:</strong>
-                  <span>{{ formatDate(url.next_check_at) }}</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                  <i class="bi bi-check-circle"></i>
-                  <strong>Last Checked:</strong>
-                  <span>{{ formatDate(url.last_checked_at) }}</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                  <i class="bi bi-file-text"></i>
-                  <strong>Status:</strong>
-                  <span v-if="url.schedule_available" class="badge badge-success">Schedule Available</span>
-                  <span v-else class="badge badge-warning">Waiting for Schedule</span>
-                </div>
-                <div v-if="url.notification_email" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
-                  <i class="bi bi-envelope"></i>
-                  <strong>Notifications:</strong>
-                  <span>{{ url.notification_email }}</span>
-                </div>
+              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <button @click="checkNow(url.id)" class="btn-outline-primary" style="white-space: nowrap; padding: 0.5rem 1rem;">
+                  <i class="bi bi-arrow-repeat"></i> Check Now
+                </button>
+                <button @click="removeUrl(url.id)" class="btn-danger" style="white-space: nowrap; padding: 0.5rem 1rem;">
+                  <i class="bi bi-trash"></i> Remove
+                </button>
               </div>
             </div>
+          </div>
+        </div>
 
-            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-              <button @click="checkNow(url.id)" class="btn-outline-primary" style="white-space: nowrap; padding: 0.5rem 1rem;">
-                <i class="bi bi-arrow-repeat"></i> Check Now
-              </button>
-              <button @click="removeUrl(url.id)" class="btn-danger" style="white-space: nowrap; padding: 0.5rem 1rem;">
-                <i class="bi bi-trash"></i> Remove
-              </button>
+        <!-- Past Tournaments -->
+        <div v-if="pastUrls.length > 0" style="margin-top: 2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 1.5rem;" @click="pastCollapsed = !pastCollapsed">
+            <h2 style="margin: 0; font-size: 1.5rem; font-weight: 600; color: var(--text-secondary);">
+              <i class="bi bi-calendar-x"></i> Past Tournaments ({{ pastUrls.length }})
+            </h2>
+            <i :class="pastCollapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up'" style="font-size: 1.5rem; color: var(--text-secondary);"></i>
+          </div>
+          <div v-show="!pastCollapsed">
+            <div v-for="url in pastUrls" :key="url.id" class="url-card" style="opacity: 0.8;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+                <div style="flex: 1;">
+                  <div class="url-title">{{ url.name }}</div>
+                  <a :href="url.url" target="_blank" rel="noopener" class="url-link">
+                    <i class="bi bi-link-45deg"></i> {{ url.url }}
+                  </a>
+
+                  <div class="url-meta">
+                    <div class="meta-item">
+                      <i class="bi bi-calendar-event"></i>
+                      <span>{{ formatSimpleDate(url.tournament_start_date) }}</span>
+                      <span style="margin-left: 0.5rem; color: var(--text-light); font-size: 0.75rem;">
+                        (Past)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--bg-color); border-radius: var(--radius-sm); font-size: 0.875rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                      <i class="bi bi-check-circle"></i>
+                      <strong>Last Checked:</strong>
+                      <span>{{ formatDate(url.last_checked_at) }}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <i class="bi bi-file-text"></i>
+                      <strong>Status:</strong>
+                      <span v-if="url.schedule_available" class="badge badge-success">Schedule Available</span>
+                      <span v-else class="badge badge-warning">Waiting for Schedule</span>
+                    </div>
+                    <div v-if="url.notification_email" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                      <i class="bi bi-envelope"></i>
+                      <strong>Notifications:</strong>
+                      <span>{{ url.notification_email }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <button @click="removeUrl(url.id)" class="btn-danger" style="white-space: nowrap; padding: 0.5rem 1rem;">
+                    <i class="bi bi-trash"></i> Remove
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

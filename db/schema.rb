@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_14_180947) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_14_203732) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -37,6 +37,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_14_180947) do
     t.string "content_hash"
     t.datetime "created_at", null: false
     t.bigint "monitored_url_id", null: false
+    t.jsonb "schedule_data"
     t.datetime "updated_at", null: false
     t.index ["monitored_url_id"], name: "index_schedule_snapshots_on_monitored_url_id"
   end

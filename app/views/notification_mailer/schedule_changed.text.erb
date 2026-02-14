@@ -4,8 +4,20 @@ The schedule for <%= @monitored_url.name %> has been updated.
 
 URL: <%= @monitored_url.url %>
 
+<% if @new_snapshot.schedule_data.present? && @new_snapshot.schedule_data.any? %>
+UPDATED SCHEDULE:
+<% @new_snapshot.schedule_data.each_with_index do |game, index| %>
+Game <%= index + 1 %>:
+  Date: <%= game['date'] %>
+  Time: <%= game['time'] %>
+  Matchup: <%= game['team1'] || game['home'] %> vs <%= game['team2'] || game['away'] || game['opponent'] %>
+  Location: <%= game['location'] %>
+
+<% end %>
+<% else %>
 WHAT CHANGED (AI Analysis):
 <%= @new_snapshot.ai_summary %>
+<% end %>
 
 Checked at: <%= @new_snapshot.checked_at.strftime("%B %d, %Y at %I:%M %p") %>
 

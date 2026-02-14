@@ -33,6 +33,7 @@ class UrlCheckJob < ApplicationJob
       content: content,
       content_hash: content_hash,
       ai_summary: ai_summary,
+      schedule_data: analysis_result[:schedule_data],
       checked_at: Time.current,
       changes_detected: content_changed && (schedule_changed || schedule_now_available)
     )

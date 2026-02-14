@@ -4,8 +4,20 @@ Good news! The schedule for <%= @monitored_url.name %> is now available.
 
 URL: <%= @monitored_url.url %>
 
+<% if @snapshot.schedule_data.present? && @snapshot.schedule_data.any? %>
+SCHEDULE:
+<% @snapshot.schedule_data.each_with_index do |game, index| %>
+Game <%= index + 1 %>:
+  Date: <%= game['date'] %>
+  Time: <%= game['time'] %>
+  Matchup: <%= game['team1'] || game['home'] %> vs <%= game['team2'] || game['away'] || game['opponent'] %>
+  Location: <%= game['location'] %>
+
+<% end %>
+<% else %>
 AI SUMMARY:
 <%= @snapshot.ai_summary %>
+<% end %>
 
 Checked at: <%= @snapshot.checked_at.strftime("%B %d, %Y at %I:%M %p") %>
 

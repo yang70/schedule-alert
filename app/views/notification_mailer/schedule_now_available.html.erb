@@ -4,10 +4,36 @@
 
 <p><strong>URL:</strong> <%= link_to @monitored_url.url, @monitored_url.url %></p>
 
-<h2>AI Summary:</h2>
-<div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-  <%= simple_format @snapshot.ai_summary %>
-</div>
+<% if @snapshot.schedule_data.present? && @snapshot.schedule_data.any? %>
+  <h2>Schedule:</h2>
+  <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #fff;">
+    <thead>
+      <tr style="background-color: #0EA5E9; color: white;">
+        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Date</th>
+        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Time</th>
+        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Matchup</th>
+        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Location</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @snapshot.schedule_data.each_with_index do |game, index| %>
+        <tr style="background-color: <%= index.even? ? '#f8f9fa' : '#fff' %>;">
+          <td style="padding: 10px; border: 1px solid #ddd;"><%= game['date'] %></td>
+          <td style="padding: 10px; border: 1px solid #ddd;"><%= game['time'] %></td>
+          <td style="padding: 10px; border: 1px solid #ddd;">
+            <strong><%= game['team1'] || game['home'] %></strong> vs <strong><%= game['team2'] || game['away'] || game['opponent'] %></strong>
+          </td>
+          <td style="padding: 10px; border: 1px solid #ddd;"><%= game['location'] %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <h2>AI Summary:</h2>
+  <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+    <%= simple_format @snapshot.ai_summary %>
+  </div>
+<% end %>
 
 <p>
   <strong>Checked at:</strong> <%= @snapshot.checked_at.strftime("%B %d, %Y at %I:%M %p") %>
