@@ -10,7 +10,8 @@ class MonitoredUrl < ApplicationRecord
   after_save :schedule_next_check, if: :tournament_start_date_changed?
 
   scope :active, -> { where(active: true) }
-  scope :due_for_check, -> { active.where('next_check_at IS NULL OR next_check_at <= ?', Time.current) }
+  scope :upcoming_tournaments, -> { where('tournament_start_date >= ?', Date.current) }
+  scope :due_for_check, -> { active.upcoming_tournaments.where('next_check_at IS NULL OR next_check_at <= ?', Time.current) }
 
   # Calculate days until tournament
   def days_until_tournament
