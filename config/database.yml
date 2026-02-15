@@ -88,7 +88,7 @@ production:
   primary: &primary_production
     <<: *default
     database: schedule_production
-    username: schedule
+    username: ubuntu
     password: <%= ENV["SCHEDULE_DATABASE_PASSWORD"] %>
   cache:
     <<: *primary_production
