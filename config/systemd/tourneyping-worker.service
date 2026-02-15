@@ -1,0 +1,17 @@
+[Unit]
+Description=Tourneyping Background Worker (Sidekiq)
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/schedule
+Environment=RAILS_ENV=production
+Environment=RAILS_LOG_TO_STDOUT=1
+EnvironmentFile=/home/ubuntu/schedule/.env.production
+ExecStart=/home/ubuntu/.rbenv/shims/bundle exec sidekiq -C config/sidekiq.yml
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
