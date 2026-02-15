@@ -92,9 +92,10 @@ Rails.application.configure do
   config.hosts = [
     "tourneyping.com",     # Allow requests from tourneyping.com
     "www.tourneyping.com", # Allow requests from www subdomain
-    /.*\.tourneyping\.com/ # Allow requests from any subdomain
+    /.*\.tourneyping\.com/, # Allow requests from any subdomain
+    "44.226.63.157"        # Temporarily allow direct IP access
   ]
-  
+
   # Skip DNS rebinding protection for the default health check endpoint.
   config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 end
