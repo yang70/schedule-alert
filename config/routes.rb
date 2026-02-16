@@ -13,6 +13,8 @@ Rails.application.routes.draw do
         post :check_now
       end
     end
+
+    resources :people, only: [:index, :create]
   end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

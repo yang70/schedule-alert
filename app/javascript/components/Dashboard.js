@@ -4,11 +4,13 @@ export default {
     return {
       monitoredUrls: [],
       recentSnapshots: [],
+      people: [],
       loading: true,
       formCollapsed: true,
       pastCollapsed: true,
       collapsedCards: {},
       showSuccessBanner: false,
+      showPersonModal: false,
       deleteConfirmation: {
         show: false,
         urlId: null,
@@ -23,7 +25,7 @@ export default {
         url: '',
         notification_email: '',
         tournament_start_date: '',
-        person_tag: '',
+        person_id: '',
         sport: ''
       },
       editUrl: {
@@ -31,8 +33,12 @@ export default {
         url: '',
         notification_email: '',
         tournament_start_date: '',
-        person_tag: '',
+        person_id: '',
         sport: ''
+      },
+      newPerson: {
+        name: '',
+        color: '#3B82F6'
       }
     }
   },
@@ -68,10 +74,17 @@ export default {
     },
     async loadData() {
       try {
-        const response = await fetch('/monitored_urls.json')
-        const data = await response.json()
-        this.monitoredUrls = data.monitored_urls || []
-        this.recentSnapshots = data.recent_snapshots || []
+        const [urlsResponse, peopleResponse] = await Promise.all([
+          fetch('/monitored_urls.json'),
+          fetch('/people.json')
+        ])
+        
+        const urlsData = await urlsResponse.json()
+        this.monitoredUrls = urlsData.monitored_urls || []
+        this.recentSnapshots = urlsData.recent_snapshots || []
+
+        const peopleData = await peopleResponse.json()
+        this.people = peopleData || []
 
         // Initialize all cards as collapsed
         this.monitoredUrls.forEach(url => {
@@ -104,7 +117,7 @@ export default {
         })
 
         if (response.ok) {
-          this.newUrl = { name: '', url: '', notification_email: '', tournament_start_date: '', person_tag: '', sport: '' }
+          this.newUrl = { name: '', url: '', notification_email: '', tournament_start_date: '', person_id: '', sport: '' }
           this.loadData()
           this.formCollapsed = true
           this.showSuccessBanner = true
@@ -168,7 +181,7 @@ export default {
         url: url.url,
         notification_email: url.notification_email || '',
         tournament_start_date: url.tournament_start_date,
-        person_tag: url.person_tag || '',
+        person_id: url.person ? url.person.id : '',
         sport: url.sport || ''
       }
     },
@@ -182,7 +195,7 @@ export default {
         url: '',
         notification_email: '',
         tournament_start_date: '',
-        person_tag: '',
+        person_id: '',
         sport: ''
       }
     },
@@ -208,6 +221,43 @@ export default {
       } catch (error) {
         console.error('Error updating URL:', error)
         alert('Error updating URL')
+      }
+    },
+    openPersonModal() {
+      this.showPersonModal = true
+    },
+    closePersonModal() {
+      this.showPersonModal = false
+      this.newPerson = { name: '', color: '#3B82F6' }
+    },
+    async createPerson() {
+      if (!this.newPerson.name) {
+        alert('Please enter a person name')
+        return
+      }
+
+      try {
+        const response = await fetch('/people', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
+          },
+          body: JSON.stringify({ person: this.newPerson })
+        })
+
+        if (response.ok) {
+          const person = await response.json()
+          this.people.push(person)
+          this.closePersonModal()
+        } else {
+          const errorData = await response.json()
+          alert(errorData.errors ? errorData.errors.join(', ') : 'Failed to create person')
+        }
+      } catch (error) {
+        console.error('Error creating person:', error)
+        alert('Error creating person')
       }
     },
     getSportIcon(sport) {
@@ -291,6 +341,37 @@ export default {
         </div>
       </div>
 
+      <!-- Create Person Modal -->
+      <div v-if="showPersonModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;" @click.self="closePersonModal">
+        <div style="background: white; border-radius: var(--radius-lg); padding: 2rem; max-width: 500px; width: 90%; box-shadow: var(--shadow-lg);">
+          <h3 style="margin: 0 0 1.5rem 0; color: var(--text-primary);">
+            <i class="bi bi-person-plus"></i> Create New Person
+          </h3>
+          <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Person Name <span style="color: var(--accent-color);">*</span></label>
+            <input v-model="newPerson.name" type="text" placeholder="e.g., John, Sarah's Team" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+          </div>
+          <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Color</label>
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+              <input v-model="newPerson.color" type="color" style="width: 80px; height: 40px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
+              <span style="color: var(--text-secondary); font-size: 0.875rem;">{{ newPerson.color }}</span>
+              <div :style="`flex: 1; padding: 0.5rem 1rem; background-color: ${newPerson.color}; color: white; border-radius: var(--radius-sm); text-align: center; font-size: 0.875rem; font-weight: 500;`">
+                Preview
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+            <button @click="closePersonModal" class="btn-outline-primary" style="padding: 0.5rem 1.5rem;">
+              Cancel
+            </button>
+            <button @click="createPerson" class="btn-primary" style="padding: 0.5rem 1.5rem;">
+              <i class="bi bi-plus-circle"></i> Create Person
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Success Banner -->
       <transition name="fade">
         <div v-if="showSuccessBanner" style="position: fixed; top: 20px; right: 20px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 1rem 1.5rem; border-radius: var(--radius-md); box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3); z-index: 1001; display: flex; align-items: center; gap: 0.75rem; animation: slideIn 0.3s ease-out;">
@@ -327,7 +408,15 @@ export default {
             </div>
             <div class="form-group" style="margin-bottom: 0;">
               <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Player/Person Tag <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
-              <input v-model="newUrl.person_tag" type="text" placeholder="e.g., John's Team, Sarah" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+              <div style="display: flex; gap: 0.5rem;">
+                <select v-model="newUrl.person_id" style="flex: 1; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; background: white; cursor: pointer; transition: border-color 0.2s;">
+                  <option value="">Select a person</option>
+                  <option v-for="person in people" :key="person.id" :value="person.id">{{ person.name }}</option>
+                </select>
+                <button @click="openPersonModal" type="button" style="padding: 0.75rem 1rem; background: var(--primary-color); color: white; border: none; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 500; cursor: pointer; white-space: nowrap; transition: opacity 0.2s;" @mouseover="$event.target.style.opacity='0.9'" @mouseout="$event.target.style.opacity='1'">
+                  <i class="bi bi-plus-circle"></i> New Person
+                </button>
+              </div>
             </div>
             <div class="form-group" style="margin-bottom: 0;">
               <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Sport <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
@@ -386,7 +475,15 @@ export default {
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
                   <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Player/Person Tag <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
-                  <input v-model="editUrl.person_tag" type="text" placeholder="e.g., John's Team, Sarah" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+                  <div style="display: flex; gap: 0.5rem;">
+                    <select v-model="editUrl.person_id" style="flex: 1; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; background: white; cursor: pointer; transition: border-color 0.2s;">
+                      <option value="">Select a person</option>
+                      <option v-for="person in people" :key="person.id" :value="person.id">{{ person.name }}</option>
+                    </select>
+                    <button @click="openPersonModal" type="button" style="padding: 0.75rem 1rem; background: var(--primary-color); color: white; border: none; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 500; cursor: pointer; white-space: nowrap; transition: opacity 0.2s;" @mouseover="$event.target.style.opacity='0.9'" @mouseout="$event.target.style.opacity='1'">
+                      <i class="bi bi-plus-circle"></i> New Person
+                    </button>
+                  </div>
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
                   <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Sport <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
@@ -423,8 +520,8 @@ export default {
                     <i :class="isCardCollapsed(url.id) ? 'bi-chevron-down' : 'bi-chevron-up'" class="bi" style="color: var(--text-secondary); font-size: 1.25rem; transition: transform 0.2s;"></i>
                   </div>
                   <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                    <span v-if="url.person_tag" class="badge badge-info" style="font-size: 0.75rem; font-weight: 500;">
-                      <i class="bi bi-person"></i> {{ url.person_tag }}
+                    <span v-if="url.person" :style="`display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.75rem; background-color: ${url.person.color}; color: white; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;`">
+                      <i class="bi bi-person-fill"></i> {{ url.person.name }}
                     </span>
                     <span style="color: var(--text-secondary); font-size: 0.875rem;">
                       <i class="bi bi-calendar-event" style="margin-right: 0.25rem;"></i>{{ formatSimpleDate(url.tournament_start_date) }}
@@ -507,8 +604,8 @@ export default {
                     <i :class="isCardCollapsed(url.id) ? 'bi-chevron-down' : 'bi-chevron-up'" class="bi" style="color: var(--text-secondary); font-size: 1.25rem; transition: transform 0.2s;"></i>
                   </div>
                   <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                    <span v-if="url.person_tag" class="badge badge-info" style="font-size: 0.75rem; font-weight: 500;">
-                      <i class="bi bi-person"></i> {{ url.person_tag }}
+                    <span v-if="url.person" :style="`display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.75rem; background-color: ${url.person.color}; color: white; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;`">
+                      <i class="bi bi-person-fill"></i> {{ url.person.name }}
                     </span>
                     <span style="color: var(--text-secondary); font-size: 0.875rem;">
                       <i class="bi bi-calendar-event" style="margin-right: 0.25rem;"></i>{{ formatSimpleDate(url.tournament_start_date) }}

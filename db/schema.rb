@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_16_052620) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_16_145917) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -21,6 +21,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_052620) do
     t.string "name"
     t.datetime "next_check_at"
     t.string "notification_email"
+    t.bigint "person_id"
     t.string "person_tag"
     t.boolean "schedule_available"
     t.string "sport"
@@ -28,7 +29,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_052620) do
     t.datetime "updated_at", null: false
     t.string "url"
     t.bigint "user_id", null: false
+    t.index ["person_id"], name: "index_monitored_urls_on_person_id"
     t.index ["user_id"], name: "index_monitored_urls_on_user_id"
+  end
+
+  create_table "people", force: :cascade do |t|
+    t.string "color", default: "#3B82F6", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id", "name"], name: "index_people_on_user_id_and_name", unique: true
+    t.index ["user_id"], name: "index_people_on_user_id"
   end
 
   create_table "schedule_snapshots", force: :cascade do |t|
@@ -56,6 +68,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_052620) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  add_foreign_key "monitored_urls", "people"
   add_foreign_key "monitored_urls", "users"
+  add_foreign_key "people", "users"
   add_foreign_key "schedule_snapshots", "monitored_urls"
 end

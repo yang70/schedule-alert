@@ -17,7 +17,10 @@ class MonitoredUrlsController < ApplicationController
                               .limit(10)
 
         render json: {
-          monitored_urls: @monitored_urls.as_json(only: [:id, :name, :url, :notification_email, :schedule_available, :last_checked_at, :active, :tournament_start_date, :next_check_at, :person_tag, :sport]),
+          monitored_urls: @monitored_urls.as_json(
+            only: [:id, :name, :url, :notification_email, :schedule_available, :last_checked_at, :active, :tournament_start_date, :next_check_at, :person_tag, :sport],
+            include: { person: { only: [:id, :name, :color] } }
+          ),
           recent_snapshots: @recent_snapshots.as_json(only: [:id, :ai_summary, :checked_at])
         }
       end
@@ -50,7 +53,10 @@ class MonitoredUrlsController < ApplicationController
     if @monitored_url.update(monitored_url_params)
       respond_to do |format|
         format.html { redirect_to monitored_urls_path, notice: "URL updated successfully." }
-        format.json { render json: @monitored_url.as_json(only: [:id, :name, :url, :notification_email, :schedule_available, :last_checked_at, :active, :tournament_start_date, :next_check_at, :person_tag, :sport]) }
+        format.json { render json: @monitored_url.as_json(
+          only: [:id, :name, :url, :notification_email, :schedule_available, :last_checked_at, :active, :tournament_start_date, :next_check_at, :person_tag, :sport],
+          include: { person: { only: [:id, :name, :color] } }
+        ) }
       end
     else
       respond_to do |format|
@@ -85,6 +91,6 @@ class MonitoredUrlsController < ApplicationController
   end
 
   def monitored_url_params
-    params.require(:monitored_url).permit(:url, :name, :notification_email, :active, :tournament_start_date, :person_tag, :sport)
+    params.require(:monitored_url).permit(:url, :name, :notification_email, :active, :tournament_start_date, :person_tag, :sport, :person_id)
   end
 end

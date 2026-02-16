@@ -1,5 +1,6 @@
 class MonitoredUrl < ApplicationRecord
   belongs_to :user
+  belongs_to :person, optional: true
   has_many :schedule_snapshots, dependent: :destroy
 
   SPORTS = %w[baseball softball volleyball].freeze
