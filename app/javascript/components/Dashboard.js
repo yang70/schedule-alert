@@ -395,56 +395,52 @@ export default {
             </div>
 
             <!-- Display Mode -->
-            <div v-else style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+            <div v-else style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem;">
               <div style="flex: 1;">
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                   <span v-if="url.sport" style="font-size: 1.5rem;">{{ getSportEmoji(url.sport) }}</span>
                   <div class="url-title">{{ url.name }}</div>
                 </div>
-                <div v-if="url.person_tag" style="margin-top: 0.25rem;">
-                  <span class="badge badge-info" style="font-size: 0.75rem;">
+                <div v-if="url.person_tag" style="margin-bottom: 1rem;">
+                  <span class="badge badge-info" style="font-size: 0.75rem; font-weight: 500;">
                     <i class="bi bi-person"></i> {{ url.person_tag }}
                   </span>
                 </div>
-                <div class="url-meta" style="margin-top: 0.75rem;">
-                  <div class="meta-item">
-                    <i class="bi bi-calendar-event"></i>
-                    <span>{{ formatSimpleDate(url.tournament_start_date) }}</span>
-                    <span v-if="daysUntilTournament(url.tournament_start_date) !== null && daysUntilTournament(url.tournament_start_date) >= 0" class="badge badge-primary" style="margin-left: 0.5rem;">
-                      {{ daysUntilTournament(url.tournament_start_date) }} days away
-                    </span>
-                  </div>
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                  <span style="color: var(--text-secondary); font-size: 0.9375rem;">
+                    <i class="bi bi-calendar-event" style="margin-right: 0.25rem;"></i>{{ formatSimpleDate(url.tournament_start_date) }}
+                  </span>
+                  <span v-if="daysUntilTournament(url.tournament_start_date) !== null && daysUntilTournament(url.tournament_start_date) >= 0" class="badge badge-primary" style="font-size: 0.8125rem; font-weight: 500;">
+                    {{ daysUntilTournament(url.tournament_start_date) }} days away
+                  </span>
                 </div>
-                <a :href="url.url" target="_blank" rel="noopener" style="display: inline-block; margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--primary-color); color: white; text-decoration: none; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 500; transition: opacity 0.2s;" @mouseover="$event.target.style.opacity='0.9'" @mouseout="$event.target.style.opacity='1'">
+                <a :href="url.url" target="_blank" rel="noopener" style="display: inline-block; margin-bottom: 1.25rem; padding: 0.5rem 1rem; background: var(--primary-color); color: white; text-decoration: none; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 500; transition: all 0.2s;" @mouseover="$event.target.style.opacity='0.9'" @mouseout="$event.target.style.opacity='1'">
                   <i class="bi bi-link-45deg"></i> Link to schedule
                 </a>
 
-                <div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--bg-color); border-radius: var(--radius-sm); font-size: 0.875rem;">
-                  <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                    <i class="bi bi-clock"></i>
-                    <strong>Check Frequency:</strong>
-                    <span style="color: var(--primary-color);">{{ getCheckFrequency(url.tournament_start_date) }}</span>
-                  </div>
-                  <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                    <i class="bi bi-arrow-clockwise"></i>
-                    <strong>Next Check:</strong>
-                    <span>{{ formatDate(url.next_check_at) }}</span>
-                  </div>
-                  <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                    <i class="bi bi-check-circle"></i>
-                    <strong>Last Checked:</strong>
-                    <span>{{ formatDate(url.last_checked_at) }}</span>
-                  </div>
-                  <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="bi bi-file-text"></i>
-                    <strong>Status:</strong>
-                    <span v-if="url.schedule_available" class="badge badge-success">Schedule Available</span>
-                    <span v-else class="badge badge-warning">Waiting for Schedule</span>
-                  </div>
-                  <div v-if="url.notification_email" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
-                    <i class="bi bi-envelope"></i>
-                    <strong>Notifications:</strong>
-                    <span>{{ url.notification_email }}</span>
+                <div style="border-top: 1px solid rgba(0, 0, 0, 0.08); padding-top: 1rem;">
+                  <div style="display: grid; gap: 0.625rem; font-size: 0.875rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <span style="color: var(--text-secondary); font-weight: 400;">Check Frequency</span>
+                      <span style="color: var(--primary-color); font-weight: 500;">{{ getCheckFrequency(url.tournament_start_date) }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <span style="color: var(--text-secondary); font-weight: 400;">Next Check</span>
+                      <span style="color: var(--text-color); font-weight: 400;">{{ formatDate(url.next_check_at) }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <span style="color: var(--text-secondary); font-weight: 400;">Last Checked</span>
+                      <span style="color: var(--text-color); font-weight: 400;">{{ formatDate(url.last_checked_at) }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <span style="color: var(--text-secondary); font-weight: 400;">Status</span>
+                      <span v-if="url.schedule_available" class="badge badge-success" style="font-weight: 500;">Schedule Available</span>
+                      <span v-else class="badge badge-warning" style="font-weight: 500;">Waiting for Schedule</span>
+                    </div>
+                    <div v-if="url.notification_email" style="display: flex; justify-content: space-between; align-items: center;">
+                      <span style="color: var(--text-secondary); font-weight: 400;">Notifications</span>
+                      <span style="color: var(--text-color); font-weight: 400; font-size: 0.8125rem;">{{ url.notification_email }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
