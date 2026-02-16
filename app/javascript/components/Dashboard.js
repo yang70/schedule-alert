@@ -26,6 +26,12 @@ export default {
       return this.monitoredUrls.filter(url => {
         const days = this.daysUntilTournament(url.tournament_start_date)
         return days === null || days >= 0
+      }).sort((a, b) => {
+        // Sort by tournament date, closest first
+        if (!a.tournament_start_date && !b.tournament_start_date) return 0
+        if (!a.tournament_start_date) return 1
+        if (!b.tournament_start_date) return -1
+        return new Date(a.tournament_start_date) - new Date(b.tournament_start_date)
       })
     },
     pastUrls() {

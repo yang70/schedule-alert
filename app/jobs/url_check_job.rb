@@ -8,6 +8,15 @@ class UrlCheckJob < ApplicationJob
     # Fetch the URL content
     response = HTTParty.get(monitored_url.url, timeout: 10, follow_redirects: true)
 
+    # Handle 4xx errors (content not yet available)
+    if response.code >= 400 && response.code < 500
+      monitored_url.update!(
+        last_checked_at: Time.current,
+        schedule_available: false
+      )
+      return
+    end
+
     return unless response.success?
 
     content = response.body
