@@ -356,7 +356,7 @@ export default {
             <div style="display: flex; gap: 0.75rem; align-items: center;">
               <input v-model="newPerson.color" type="color" style="width: 80px; height: 40px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
               <span style="color: var(--text-secondary); font-size: 0.875rem;">{{ newPerson.color }}</span>
-              <div :style="`flex: 1; padding: 0.5rem 1rem; background-color: ${newPerson.color}; color: white; border-radius: var(--radius-sm); text-align: center; font-size: 0.875rem; font-weight: 500;`">
+              <div :style="{flex: 1, padding: '0.5rem 1rem', backgroundColor: newPerson.color, color: 'white', borderRadius: 'var(--radius-sm)', textAlign: 'center', fontSize: '0.875rem', fontWeight: 500}">
                 Preview
               </div>
             </div>
@@ -520,7 +520,7 @@ export default {
                     <i :class="isCardCollapsed(url.id) ? 'bi-chevron-down' : 'bi-chevron-up'" class="bi" style="color: var(--text-secondary); font-size: 1.25rem; transition: transform 0.2s;"></i>
                   </div>
                   <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                    <span v-if="url.person" :style="`display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.75rem; background-color: ${url.person.color}; color: white; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;`">
+                    <span v-if="url.person" :style="{display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.75rem', backgroundColor: url.person.color, color: 'white', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 500}">
                       <i class="bi bi-person-fill"></i> {{ url.person.name }}
                     </span>
                     <span style="color: var(--text-secondary); font-size: 0.875rem;">
@@ -604,7 +604,7 @@ export default {
                     <i :class="isCardCollapsed(url.id) ? 'bi-chevron-down' : 'bi-chevron-up'" class="bi" style="color: var(--text-secondary); font-size: 1.25rem; transition: transform 0.2s;"></i>
                   </div>
                   <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                    <span v-if="url.person" :style="`display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.75rem; background-color: ${url.person.color}; color: white; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;`">
+                    <span v-if="url.person" :style="{display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.75rem', backgroundColor: url.person.color, color: 'white', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 500}">
                       <i class="bi bi-person-fill"></i> {{ url.person.name }}
                     </span>
                     <span style="color: var(--text-secondary); font-size: 0.875rem;">
