@@ -2,11 +2,8 @@ Rails.application.routes.draw do
   devise_for :users
 
   # Authenticated routes
-  authenticated :user do
-    root "dashboard#index", as: :authenticated_root
-  end
-
   authenticate :user do
+    root "dashboard#index", as: :authenticated_root
     get "dashboard", to: "dashboard#index"
 
     resources :monitored_urls, only: [:index, :create, :destroy, :update] do
@@ -16,8 +13,10 @@ Rails.application.routes.draw do
     end
   end
 
-  # Unauthenticated root - no flash message
-  root "devise/sessions#new"
+  # Unauthenticated root
+  devise_scope :user do
+    root "devise/sessions#new"
+  end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
