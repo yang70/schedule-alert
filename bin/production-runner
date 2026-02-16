@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Script to run Rails runner commands in production with environment variables loaded
+# Usage: bin/production-runner "YourCode.here"
+
+cd "$(dirname "$0")/.."
+
+if [ -f .env.production ]; then
+  set -a
+  source .env.production
+  set +a
+fi
+
+export RAILS_ENV=production
+bundle exec rails runner "$@"
