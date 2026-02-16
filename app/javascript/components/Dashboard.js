@@ -292,39 +292,43 @@ export default {
           <h2 style="margin: 0;">➕ Add New Schedule to Monitor</h2>
           <i :class="formCollapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up'" style="font-size: 1.5rem; color: var(--primary-color);"></i>
         </div>
-        <form v-show="!formCollapsed" @submit.prevent="addUrl" style="margin-top: 1.5rem;">
-          <div class="form-group">
-            <label>Name/Description</label>
-            <input v-model="newUrl.name" type="text" placeholder="e.g., Spring Tournament 2026" required>
+        <form v-show="!formCollapsed" @submit.prevent="addUrl" style="margin-top: 1.5rem; padding: 1.5rem; background: var(--bg-color); border-radius: var(--radius-md);">
+          <div style="display: grid; gap: 1rem;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Name/Description <span style="color: var(--accent-color);">*</span></label>
+              <input v-model="newUrl.name" type="text" placeholder="e.g., Spring Tournament 2026" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Tournament URL <span style="color: var(--accent-color);">*</span></label>
+              <input v-model="newUrl.url" type="url" placeholder="https://..." required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Tournament Start Date <span style="color: var(--accent-color);">*</span></label>
+              <input v-model="newUrl.tournament_start_date" type="date" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+              <small style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-top: 0.5rem;">
+                <i class="bi bi-info-circle"></i> Check frequency adjusts automatically based on proximity
+              </small>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Player/Person Tag <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
+              <input v-model="newUrl.person_tag" type="text" placeholder="e.g., John's Team, Sarah" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Sport <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
+              <select v-model="newUrl.sport" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; background: white; cursor: pointer; transition: border-color 0.2s;">
+                <option value="">Select a sport</option>
+                <option value="baseball">⚾ Baseball</option>
+                <option value="volleyball">🏐 Volleyball</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Notification Email <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
+              <input v-model="newUrl.notification_email" type="email" placeholder="Leave empty to use account email" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+            </div>
           </div>
-          <div class="form-group">
-            <label>Tournament URL</label>
-            <input v-model="newUrl.url" type="url" placeholder="https://..." required>
-          </div>
-          <div class="form-group">
-            <label>Tournament Start Date <span style="color: var(--accent-color);">*</span></label>
-            <input v-model="newUrl.tournament_start_date" type="date" required>
-            <small style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-top: 0.25rem;">
-              Check frequency adjusts automatically based on proximity
-            </small>
-          </div>
-          <div class="form-group">
-            <label>Player/Person Tag <span style="font-size: 0.75rem; color: var(--text-light);">(optional)</span></label>
-            <input v-model="newUrl.person_tag" type="text" placeholder="e.g., John's Team, Sarah">
-          </div>
-          <div class="form-group">
-            <label>Sport <span style="font-size: 0.75rem; color: var(--text-light);">(optional)</span></label>
-            <select v-model="newUrl.sport" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem;">
-              <option value="">Select a sport</option>
-              <option value="baseball">Baseball</option>
-              <option value="volleyball">Volleyball</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Notification Email <span style="font-size: 0.75rem; color: var(--text-light);">(optional)</span></label>
-            <input v-model="newUrl.notification_email" type="email" placeholder="Leave empty to use account email">
-          </div>
-          <button type="submit" class="btn-primary">Add Schedule</button>
+          <button type="submit" class="btn-primary" style="margin-top: 1.5rem; padding: 0.75rem 1.5rem; width: 100%; font-weight: 600;">
+            <i class="bi bi-plus-circle"></i> Add Schedule
+          </button>
         </form>
       </div>
 
@@ -346,43 +350,45 @@ export default {
           </h2>
           <div v-for="url in upcomingUrls" :key="url.id" class="url-card">
             <!-- Edit Mode -->
-            <div v-if="editMode.active && editMode.urlId === url.id" style="padding: 1rem;">
-              <h3 style="margin: 0 0 1rem 0; color: var(--primary-color);">
+            <div v-if="editMode.active && editMode.urlId === url.id" style="padding: 1.5rem; background: var(--bg-color); border-radius: var(--radius-md);">
+              <h3 style="margin: 0 0 1.5rem 0; color: var(--primary-color); font-size: 1.25rem; font-weight: 600;">
                 <i class="bi bi-pencil"></i> Edit Schedule
               </h3>
-              <div class="form-group">
-                <label>Name/Description</label>
-                <input v-model="editUrl.name" type="text" required>
+              <div style="display: grid; gap: 1rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Name/Description <span style="color: var(--accent-color);">*</span></label>
+                  <input v-model="editUrl.name" type="text" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Tournament URL <span style="color: var(--accent-color);">*</span></label>
+                  <input v-model="editUrl.url" type="url" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Tournament Start Date <span style="color: var(--accent-color);">*</span></label>
+                  <input v-model="editUrl.tournament_start_date" type="date" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Player/Person Tag <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
+                  <input v-model="editUrl.person_tag" type="text" placeholder="e.g., John's Team, Sarah" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Sport <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
+                  <select v-model="editUrl.sport" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; background: white; cursor: pointer; transition: border-color 0.2s;">
+                    <option value="">Select a sport</option>
+                    <option value="baseball">⚾ Baseball</option>
+                    <option value="volleyball">🏐 Volleyball</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Notification Email <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
+                  <input v-model="editUrl.notification_email" type="email" placeholder="Leave empty to use account email" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+                </div>
               </div>
-              <div class="form-group">
-                <label>Tournament URL</label>
-                <input v-model="editUrl.url" type="url" required>
-              </div>
-              <div class="form-group">
-                <label>Tournament Start Date</label>
-                <input v-model="editUrl.tournament_start_date" type="date" required>
-              </div>
-              <div class="form-group">
-                <label>Player/Person Tag</label>
-                <input v-model="editUrl.person_tag" type="text" placeholder="e.g., John's Team, Sarah">
-              </div>
-              <div class="form-group">
-                <label>Sport</label>
-                <select v-model="editUrl.sport" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem;">
-                  <option value="">Select a sport</option>
-                  <option value="baseball">Baseball</option>
-                  <option value="volleyball">Volleyball</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Notification Email</label>
-                <input v-model="editUrl.notification_email" type="email">
-              </div>
-              <div style="display: flex; gap: 0.5rem;">
-                <button @click="saveEdit" class="btn-primary">
-                  <i class="bi bi-check-lg"></i> Save
+              <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                <button @click="saveEdit" class="btn-primary" style="flex: 1; padding: 0.75rem 1.5rem; font-weight: 600;">
+                  <i class="bi bi-check-lg"></i> Save Changes
                 </button>
-                <button @click="cancelEdit" class="btn-outline-primary">
+                <button @click="cancelEdit" class="btn-outline-primary" style="padding: 0.75rem 1.5rem;">
                   <i class="bi bi-x-lg"></i> Cancel
                 </button>
               </div>
