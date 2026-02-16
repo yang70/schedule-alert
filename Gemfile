@@ -24,6 +24,7 @@ gem "devise"
 
 # Background Jobs
 gem "sidekiq"
+gem "sidekiq-cron"
 gem "redis"
 
 # OpenAI Integration
