@@ -3,7 +3,7 @@ class MonitoredUrlsController < ApplicationController
   before_action :set_monitored_url, only: [:destroy, :update, :check_now]
 
   def index
-    @monitored_urls = current_user.monitored_urls.order(created_at: :desc)
+    @monitored_urls = current_user.monitored_urls.includes(:person).order(created_at: :desc)
     @monitored_url = MonitoredUrl.new
 
     respond_to do |format|
@@ -18,7 +18,7 @@ class MonitoredUrlsController < ApplicationController
 
         render json: {
           monitored_urls: @monitored_urls.as_json(
-            only: [:id, :name, :url, :notification_email, :schedule_available, :last_checked_at, :active, :tournament_start_date, :next_check_at, :person_tag, :sport],
+            except: [:created_at, :updated_at, :user_id, :person_tag],
             include: { person: { only: [:id, :name, :color] } }
           ),
           recent_snapshots: @recent_snapshots.as_json(only: [:id, :ai_summary, :checked_at])
@@ -53,10 +53,13 @@ class MonitoredUrlsController < ApplicationController
     if @monitored_url.update(monitored_url_params)
       respond_to do |format|
         format.html { redirect_to monitored_urls_path, notice: "URL updated successfully." }
-        format.json { render json: @monitored_url.as_json(
-          only: [:id, :name, :url, :notification_email, :schedule_available, :last_checked_at, :active, :tournament_start_date, :next_check_at, :person_tag, :sport],
-          include: { person: { only: [:id, :name, :color] } }
-        ) }
+        format.json { 
+          @monitored_url.reload
+          render json: @monitored_url.as_json(
+            except: [:created_at, :updated_at, :user_id, :person_tag],
+            include: { person: { only: [:id, :name, :color] } }
+          ) 
+        }
       end
     else
       respond_to do |format|
@@ -91,6 +94,6 @@ class MonitoredUrlsController < ApplicationController
   end
 
   def monitored_url_params
-    params.require(:monitored_url).permit(:url, :name, :notification_email, :active, :tournament_start_date, :person_tag, :sport, :person_id)
+    params.require(:monitored_url).permit(:url, :name, :notification_email, :active, :tournament_start_date, :sport, :person_id)
   end
 end

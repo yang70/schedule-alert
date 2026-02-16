@@ -8,7 +8,7 @@ class PeopleController < ApplicationController
 
   def create
     @person = current_user.people.build(person_params)
-    
+
     if @person.save
       render json: @person, status: :created
     else

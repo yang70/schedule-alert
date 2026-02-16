@@ -78,7 +78,7 @@ export default {
           fetch('/monitored_urls.json'),
           fetch('/people.json')
         ])
-        
+
         const urlsData = await urlsResponse.json()
         this.monitoredUrls = urlsData.monitored_urls || []
         this.recentSnapshots = urlsData.recent_snapshots || []

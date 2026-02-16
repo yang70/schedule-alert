@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_16_145917) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_16_151617) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -22,7 +22,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_145917) do
     t.datetime "next_check_at"
     t.string "notification_email"
     t.bigint "person_id"
-    t.string "person_tag"
     t.boolean "schedule_available"
     t.string "sport"
     t.date "tournament_start_date"
