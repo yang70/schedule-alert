@@ -10,7 +10,7 @@ Rails.application.routes.draw do
   authenticated :user do
     root "dashboard#index", as: :authenticated_root
   end
-  
+
   authenticate :user do
     get "dashboard", to: "dashboard#index"
 
