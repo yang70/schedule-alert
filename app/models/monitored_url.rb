@@ -2,7 +2,7 @@ class MonitoredUrl < ApplicationRecord
   belongs_to :user
   has_many :schedule_snapshots, dependent: :destroy
 
-  SPORTS = %w[baseball volleyball].freeze
+  SPORTS = %w[baseball softball volleyball].freeze
 
   validates :url, presence: true, format: { with: URI::DEFAULT_PARSER.make_regexp(%w[http https]) }
   validates :name, presence: true

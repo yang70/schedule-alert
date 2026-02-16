@@ -72,14 +72,14 @@ export default {
         const data = await response.json()
         this.monitoredUrls = data.monitored_urls || []
         this.recentSnapshots = data.recent_snapshots || []
-        
+
         // Initialize all cards as collapsed
         this.monitoredUrls.forEach(url => {
           if (this.collapsedCards[url.id] === undefined) {
             this.collapsedCards[url.id] = true
           }
         })
-        
+
         this.loading = false
       } catch (error) {
         console.error('Error loading data:', error)
@@ -216,6 +216,7 @@ export default {
     },
     getSportEmoji(sport) {
       if (sport === 'baseball') return '⚾'
+      if (sport === 'softball') return '🥎'
       if (sport === 'volleyball') return '🏐'
       return ''
     },
@@ -333,6 +334,7 @@ export default {
               <select v-model="newUrl.sport" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; background: white; cursor: pointer; transition: border-color 0.2s;">
                 <option value="">Select a sport</option>
                 <option value="baseball">⚾ Baseball</option>
+                <option value="softball">🥎 Softball</option>
                 <option value="volleyball">🏐 Volleyball</option>
               </select>
             </div>
@@ -391,6 +393,7 @@ export default {
                   <select v-model="editUrl.sport" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; background: white; cursor: pointer; transition: border-color 0.2s;">
                     <option value="">Select a sport</option>
                     <option value="baseball">⚾ Baseball</option>
+                    <option value="softball">🥎 Softball</option>
                     <option value="volleyball">🏐 Volleyball</option>
                   </select>
                 </div>
