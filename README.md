@@ -193,6 +193,46 @@ docker-compose -f docker-compose.production.yml up -d
 docker-compose -f docker-compose.production.yml run web rails db:migrate
 ```
 
+## Production Management
+
+### Production Console Access
+
+When deployed to a server (without Docker), use these helper scripts to run Rails commands with the proper environment variables loaded:
+
+```bash
+# Interactive Rails console
+./bin/production-console
+
+# Run one-off commands
+./bin/production-runner "MonitoredUrl.count"
+./bin/production-runner "puts MonitoredUrl.due_for_check.map(&:name)"
+```
+
+These scripts automatically load environment variables from `.env.production` and set `RAILS_ENV=production`.
+
+### Monitoring Background Jobs
+
+```bash
+# View worker logs
+sudo journalctl -u tourneyping-worker.service -f
+
+# Check worker status
+sudo systemctl status tourneyping-worker.service
+
+# Restart worker
+sudo systemctl restart tourneyping-worker.service
+```
+
+### Viewing Application Logs
+
+```bash
+# View web server logs
+sudo journalctl -u tourneyping-web.service -f
+
+# View both services
+sudo journalctl -u tourneyping-web.service -u tourneyping-worker.service -f
+```
+
 ## Development
 
 ### Running Tests
