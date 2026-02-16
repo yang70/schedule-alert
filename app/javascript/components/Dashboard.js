@@ -196,9 +196,13 @@ export default {
       }
     },
     getSportIcon(sport) {
-      if (sport === 'baseball') return 'bi-trophy'
-      if (sport === 'volleyball') return 'bi-circle'
-      return 'bi-calendar-check'
+      // Note: Bootstrap Icons doesn't have specific sport icons, so we'll show emoji/text instead
+      return null
+    },
+    getSportEmoji(sport) {
+      if (sport === 'baseball') return '⚾'
+      if (sport === 'volleyball') return '🏐'
+      return ''
     },
     async checkNow(id) {
       try {
@@ -388,7 +392,7 @@ export default {
             <div v-else style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
               <div style="flex: 1;">
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                  <i v-if="url.sport" :class="getSportIcon(url.sport)" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+                  <span v-if="url.sport" style="font-size: 1.5rem;">{{ getSportEmoji(url.sport) }}</span>
                   <div class="url-title">{{ url.name }}</div>
                 </div>
                 <div v-if="url.person_tag" style="margin-top: 0.25rem;">
@@ -468,7 +472,7 @@ export default {
               <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
                 <div style="flex: 1;">
                   <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <i v-if="url.sport" :class="getSportIcon(url.sport)" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+                    <span v-if="url.sport" style="font-size: 1.5rem;">{{ getSportEmoji(url.sport) }}</span>
                     <div class="url-title">{{ url.name }}</div>
                   </div>
                   <div v-if="url.person_tag" style="margin-top: 0.25rem;">
