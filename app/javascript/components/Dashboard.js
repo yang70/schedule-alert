@@ -406,10 +406,6 @@ export default {
                     <i class="bi bi-person"></i> {{ url.person_tag }}
                   </span>
                 </div>
-                <a :href="url.url" target="_blank" rel="noopener" style="display: inline-block; margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--primary-color); color: white; text-decoration: none; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 500; transition: opacity 0.2s;" @mouseover="$event.target.style.opacity='0.9'" @mouseout="$event.target.style.opacity='1'">
-                  <i class="bi bi-link-45deg"></i> Link to schedule
-                </a>
-
                 <div class="url-meta" style="margin-top: 0.75rem;">
                   <div class="meta-item">
                     <i class="bi bi-calendar-event"></i>
@@ -419,6 +415,9 @@ export default {
                     </span>
                   </div>
                 </div>
+                <a :href="url.url" target="_blank" rel="noopener" style="display: inline-block; margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--primary-color); color: white; text-decoration: none; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 500; transition: opacity 0.2s;" @mouseover="$event.target.style.opacity='0.9'" @mouseout="$event.target.style.opacity='1'">
+                  <i class="bi bi-link-45deg"></i> Link to schedule
+                </a>
 
                 <div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--bg-color); border-radius: var(--radius-sm); font-size: 0.875rem;">
                   <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
@@ -486,10 +485,6 @@ export default {
                       <i class="bi bi-person"></i> {{ url.person_tag }}
                     </span>
                   </div>
-                  <a :href="url.url" target="_blank" rel="noopener" style="display: inline-block; margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--primary-color); color: white; text-decoration: none; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 500; transition: opacity 0.2s;" @mouseover="$event.target.style.opacity='0.9'" @mouseout="$event.target.style.opacity='1'">
-                    <i class="bi bi-link-45deg"></i> Link to schedule
-                  </a>
-
                   <div class="url-meta" style="margin-top: 0.75rem;">
                     <div class="meta-item">
                       <i class="bi bi-calendar-event"></i>
@@ -499,6 +494,9 @@ export default {
                       </span>
                     </div>
                   </div>
+                  <a :href="url.url" target="_blank" rel="noopener" style="display: inline-block; margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--primary-color); color: white; text-decoration: none; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 500; transition: opacity 0.2s;" @mouseover="$event.target.style.opacity='0.9'" @mouseout="$event.target.style.opacity='1'">
+                    <i class="bi bi-link-45deg"></i> Link to schedule
+                  </a>
 
                   <div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--bg-color); border-radius: var(--radius-sm); font-size: 0.875rem;">
                     <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
