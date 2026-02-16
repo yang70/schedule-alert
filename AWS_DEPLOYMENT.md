@@ -1,4 +1,4 @@
-# Schedule Alert - AWS Deployment Guide
+# TourneyPing - AWS Deployment Guide
 
 ## Overview
 This application is configured for deployment to AWS using Docker containers. You can deploy using either:

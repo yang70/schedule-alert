@@ -1,0 +1,40 @@
+#!/bin/bash
+# View production logs on AWS Lightsail
+# Usage: ./bin/view-logs [web|worker|both] [lines|follow]
+
+SERVICE=${1:-web}
+MODE=${2:-50}
+
+case "$SERVICE" in
+  web)
+    if [ "$MODE" = "follow" ] || [ "$MODE" = "f" ]; then
+      ssh -i ~/.ssh/lightsail/LightsailDefaultKey-*.pem ubuntu@44.226.63.157 'sudo journalctl -u tourneyping-web.service -f'
+    else
+      ssh -i ~/.ssh/lightsail/LightsailDefaultKey-*.pem ubuntu@44.226.63.157 "sudo journalctl -u tourneyping-web.service -n ${MODE} --no-pager"
+    fi
+    ;;
+  worker)
+    if [ "$MODE" = "follow" ] || [ "$MODE" = "f" ]; then
+      ssh -i ~/.ssh/lightsail/LightsailDefaultKey-*.pem ubuntu@44.226.63.157 'sudo journalctl -u tourneyping-worker.service -f'
+    else
+      ssh -i ~/.ssh/lightsail/LightsailDefaultKey-*.pem ubuntu@44.226.63.157 "sudo journalctl -u tourneyping-worker.service -n ${MODE} --no-pager"
+    fi
+    ;;
+  both)
+    if [ "$MODE" = "follow" ] || [ "$MODE" = "f" ]; then
+      ssh -i ~/.ssh/lightsail/LightsailDefaultKey-*.pem ubuntu@44.226.63.157 'sudo journalctl -u tourneyping-web.service -u tourneyping-worker.service -f'
+    else
+      ssh -i ~/.ssh/lightsail/LightsailDefaultKey-*.pem ubuntu@44.226.63.157 "sudo journalctl -u tourneyping-web.service -u tourneyping-worker.service -n ${MODE} --no-pager"
+    fi
+    ;;
+  *)
+    echo "Usage: ./bin/view-logs [web|worker|both] [lines|follow]"
+    echo ""
+    echo "Examples:"
+    echo "  ./bin/view-logs web 50        # Last 50 lines of web logs"
+    echo "  ./bin/view-logs worker follow # Follow worker logs in real-time"
+    echo "  ./bin/view-logs both 100      # Last 100 lines of both services"
+    echo "  ./bin/view-logs web f         # Follow web logs (shorthand)"
+    exit 1
+    ;;
+esac

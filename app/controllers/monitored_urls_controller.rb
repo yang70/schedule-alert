@@ -53,12 +53,12 @@ class MonitoredUrlsController < ApplicationController
     if @monitored_url.update(monitored_url_params)
       respond_to do |format|
         format.html { redirect_to monitored_urls_path, notice: "URL updated successfully." }
-        format.json { 
+        format.json {
           @monitored_url.reload
           render json: @monitored_url.as_json(
             except: [:created_at, :updated_at, :user_id, :person_tag],
             include: { person: { only: [:id, :name, :color] } }
-          ) 
+          )
         }
       end
     else

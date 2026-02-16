@@ -1,7 +1,7 @@
-# Schedule Alert - Copilot Instructions
+# TourneyPing - Copilot Instructions
 
 ## Project Overview
-Schedule Alert is a web application that monitors sports tournament schedule URLs and notifies users when schedules become available or change.
+TourneyPing is a web application that monitors sports tournament schedule URLs and notifies users when schedules become available or change.
 
 ## Technology Stack
 - **Backend**: Ruby 3.3.10, Rails 8.1.2

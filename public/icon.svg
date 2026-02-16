@@ -1,3 +1,32 @@
-<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="256" cy="256" r="256" fill="red"/>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="#1B3B6F"/>
+  
+  <!-- Calendar -->
+  <g id="calendar">
+    <!-- Calendar body -->
+    <rect x="100" y="140" width="200" height="240" rx="20" fill="white"/>
+    
+    <!-- Calendar rings -->
+    <rect x="130" y="100" width="30" height="60" rx="15" fill="white"/>
+    <rect x="230" y="100" width="30" height="60" rx="15" fill="white"/>
+    
+    <!-- Number -->
+    <text x="200" y="310" font-family="Arial, sans-serif" font-size="120" font-weight="bold" fill="#1B3B6F" text-anchor="middle">17</text>
+  </g>
+  
+  <!-- Baseball notification indicator -->
+  <g id="notification">
+    <circle cx="380" cy="280" r="80" fill="white"/>
+    
+    <!-- Baseball stitches -->
+    <path d="M 345 250 Q 360 260 345 270" stroke="#1B3B6F" stroke-width="8" fill="none"/>
+    <path d="M 415 270 Q 400 280 415 290" stroke="#1B3B6F" stroke-width="8" fill="none"/>
+    
+    <!-- Notification waves -->
+    <path d="M 425 220 Q 440 220 460 200" stroke="#4CAF50" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <path d="M 435 235 Q 455 235 480 215" stroke="#4CAF50" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <path d="M 425 300 Q 440 300 460 320" stroke="#FF9800" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <path d="M 435 315 Q 455 315 480 335" stroke="#FF9800" stroke-width="12" stroke-linecap="round" fill="none"/>
+  </g>
 </svg>

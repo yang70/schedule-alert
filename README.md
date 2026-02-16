@@ -1,4 +1,4 @@
-# Schedule Alert
+# TourneyPing
 
 A web application that monitors sports tournament schedule URLs and notifies users when schedules become available or change. Uses AI (OpenAI/ChatGPT) to intelligently detect and summarize schedule changes.
 
