@@ -12,10 +12,18 @@ fi
 echo "🚀 Deploying to tourneyping.com..."
 
 ssh -i "$KEY_FILE" ubuntu@44.226.63.157 << 'ENDSSH'
+  set -e
   cd ~/schedule
+  
+  # Initialize rbenv
+  export PATH="$HOME/.rbenv/bin:$PATH"
+  eval "$(rbenv init -)"
+  
   echo "📥 Pulling latest code..."
+  # Stash any local changes (like certbot's nginx modifications)
+  git stash
   git pull
-
+  
   echo "📦 Installing dependencies..."
   bundle install --without development test
   npm install
