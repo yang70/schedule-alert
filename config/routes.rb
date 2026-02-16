@@ -1,11 +1,6 @@
 Rails.application.routes.draw do
   devise_for :users
 
-  # Unauthenticated root - check this FIRST to avoid authentication flash
-  unauthenticated do
-    root "devise/sessions#new", as: :unauthenticated_root
-  end
-
   # Authenticated routes
   authenticated :user do
     root "dashboard#index", as: :authenticated_root
@@ -20,6 +15,9 @@ Rails.application.routes.draw do
       end
     end
   end
+
+  # Unauthenticated root - no flash message
+  root "devise/sessions#new"
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
