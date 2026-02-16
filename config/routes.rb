@@ -1,11 +1,11 @@
 Rails.application.routes.draw do
-  devise_for :users, controllers: {
-    sessions: 'users/sessions'
-  }
+  devise_for :users
+
+  # Landing page for unauthenticated users
+  root "pages#home"
 
   # Authenticated routes
   authenticate :user do
-    root "dashboard#index", as: :authenticated_root
     get "dashboard", to: "dashboard#index"
 
     resources :monitored_urls, only: [:index, :create, :destroy, :update] do
@@ -13,11 +13,6 @@ Rails.application.routes.draw do
         post :check_now
       end
     end
-  end
-
-  # Unauthenticated root
-  devise_scope :user do
-    root "devise/sessions#new"
   end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
