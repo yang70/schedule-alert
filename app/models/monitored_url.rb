@@ -2,9 +2,12 @@ class MonitoredUrl < ApplicationRecord
   belongs_to :user
   has_many :schedule_snapshots, dependent: :destroy
 
+  SPORTS = %w[baseball volleyball].freeze
+
   validates :url, presence: true, format: { with: URI::DEFAULT_PARSER.make_regexp(%w[http https]) }
   validates :name, presence: true
   validates :tournament_start_date, presence: true
+  validates :sport, inclusion: { in: SPORTS, allow_blank: true }
 
   before_create :set_defaults
   after_save :schedule_next_check, if: :tournament_start_date_changed?

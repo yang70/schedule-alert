@@ -17,7 +17,7 @@ class MonitoredUrlsController < ApplicationController
                               .limit(10)
 
         render json: {
-          monitored_urls: @monitored_urls.as_json(only: [:id, :name, :url, :notification_email, :schedule_available, :last_checked_at, :active, :tournament_start_date, :next_check_at]),
+          monitored_urls: @monitored_urls.as_json(only: [:id, :name, :url, :notification_email, :schedule_available, :last_checked_at, :active, :tournament_start_date, :next_check_at, :person_tag, :sport]),
           recent_snapshots: @recent_snapshots.as_json(only: [:id, :ai_summary, :checked_at])
         }
       end
@@ -48,9 +48,15 @@ class MonitoredUrlsController < ApplicationController
 
   def update
     if @monitored_url.update(monitored_url_params)
-      redirect_to monitored_urls_path, notice: "URL updated successfully."
+      respond_to do |format|
+        format.html { redirect_to monitored_urls_path, notice: "URL updated successfully." }
+        format.json { render json: @monitored_url.as_json(only: [:id, :name, :url, :notification_email, :schedule_available, :last_checked_at, :active, :tournament_start_date, :next_check_at, :person_tag, :sport]) }
+      end
     else
-      redirect_to monitored_urls_path, alert: "Failed to update URL."
+      respond_to do |format|
+        format.html { redirect_to monitored_urls_path, alert: "Failed to update URL." }
+        format.json { render json: { errors: @monitored_url.errors.full_messages }, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -79,6 +85,6 @@ class MonitoredUrlsController < ApplicationController
   end
 
   def monitored_url_params
-    params.require(:monitored_url).permit(:url, :name, :notification_email, :active, :tournament_start_date)
+    params.require(:monitored_url).permit(:url, :name, :notification_email, :active, :tournament_start_date, :person_tag, :sport)
   end
 end

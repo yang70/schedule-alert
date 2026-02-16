@@ -13,11 +13,25 @@ export default {
         urlId: null,
         urlName: ''
       },
+      editMode: {
+        active: false,
+        urlId: null
+      },
       newUrl: {
         name: '',
         url: '',
         notification_email: '',
-        tournament_start_date: ''
+        tournament_start_date: '',
+        person_tag: '',
+        sport: ''
+      },
+      editUrl: {
+        name: '',
+        url: '',
+        notification_email: '',
+        tournament_start_date: '',
+        person_tag: '',
+        sport: ''
       }
     }
   },
@@ -75,7 +89,7 @@ export default {
         })
 
         if (response.ok) {
-          this.newUrl = { name: '', url: '', notification_email: '', tournament_start_date: '' }
+          this.newUrl = { name: '', url: '', notification_email: '', tournament_start_date: '', person_tag: '', sport: '' }
           this.loadData()
           this.formCollapsed = true
           this.showSuccessBanner = true
@@ -128,6 +142,63 @@ export default {
         urlId: null,
         urlName: ''
       }
+    },
+    startEdit(url) {
+      this.editMode = {
+        active: true,
+        urlId: url.id
+      }
+      this.editUrl = {
+        name: url.name,
+        url: url.url,
+        notification_email: url.notification_email || '',
+        tournament_start_date: url.tournament_start_date,
+        person_tag: url.person_tag || '',
+        sport: url.sport || ''
+      }
+    },
+    cancelEdit() {
+      this.editMode = {
+        active: false,
+        urlId: null
+      }
+      this.editUrl = {
+        name: '',
+        url: '',
+        notification_email: '',
+        tournament_start_date: '',
+        person_tag: '',
+        sport: ''
+      }
+    },
+    async saveEdit() {
+      const id = this.editMode.urlId
+      try {
+        const response = await fetch(`/monitored_urls/${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
+          },
+          body: JSON.stringify({ monitored_url: this.editUrl })
+        })
+
+        if (response.ok) {
+          this.loadData()
+          this.cancelEdit()
+        } else {
+          alert('Failed to update URL')
+        }
+      } catch (error) {
+        console.error('Error updating URL:', error)
+        alert('Error updating URL')
+      }
+    },
+    getSportIcon(sport) {
+      if (sport === 'baseball') return 'bi-trophy'
+      if (sport === 'volleyball') return 'bi-circle'
+      return 'bi-calendar-check'
     },
     async checkNow(id) {
       try {
@@ -234,6 +305,18 @@ export default {
             </small>
           </div>
           <div class="form-group">
+            <label>Player/Person Tag <span style="font-size: 0.75rem; color: var(--text-light);">(optional)</span></label>
+            <input v-model="newUrl.person_tag" type="text" placeholder="e.g., John's Team, Sarah">
+          </div>
+          <div class="form-group">
+            <label>Sport <span style="font-size: 0.75rem; color: var(--text-light);">(optional)</span></label>
+            <select v-model="newUrl.sport" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem;">
+              <option value="">Select a sport</option>
+              <option value="baseball">Baseball</option>
+              <option value="volleyball">Volleyball</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label>Notification Email <span style="font-size: 0.75rem; color: var(--text-light);">(optional)</span></label>
             <input v-model="newUrl.notification_email" type="email" placeholder="Leave empty to use account email">
           </div>
@@ -258,9 +341,61 @@ export default {
             <i class="bi bi-calendar-check"></i> Upcoming Tournaments ({{ upcomingUrls.length }})
           </h2>
           <div v-for="url in upcomingUrls" :key="url.id" class="url-card">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+            <!-- Edit Mode -->
+            <div v-if="editMode.active && editMode.urlId === url.id" style="padding: 1rem;">
+              <h3 style="margin: 0 0 1rem 0; color: var(--primary-color);">
+                <i class="bi bi-pencil"></i> Edit Schedule
+              </h3>
+              <div class="form-group">
+                <label>Name/Description</label>
+                <input v-model="editUrl.name" type="text" required>
+              </div>
+              <div class="form-group">
+                <label>Tournament URL</label>
+                <input v-model="editUrl.url" type="url" required>
+              </div>
+              <div class="form-group">
+                <label>Tournament Start Date</label>
+                <input v-model="editUrl.tournament_start_date" type="date" required>
+              </div>
+              <div class="form-group">
+                <label>Player/Person Tag</label>
+                <input v-model="editUrl.person_tag" type="text" placeholder="e.g., John's Team, Sarah">
+              </div>
+              <div class="form-group">
+                <label>Sport</label>
+                <select v-model="editUrl.sport" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem;">
+                  <option value="">Select a sport</option>
+                  <option value="baseball">Baseball</option>
+                  <option value="volleyball">Volleyball</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Notification Email</label>
+                <input v-model="editUrl.notification_email" type="email">
+              </div>
+              <div style="display: flex; gap: 0.5rem;">
+                <button @click="saveEdit" class="btn-primary">
+                  <i class="bi bi-check-lg"></i> Save
+                </button>
+                <button @click="cancelEdit" class="btn-outline-primary">
+                  <i class="bi bi-x-lg"></i> Cancel
+                </button>
+              </div>
+            </div>
+
+            <!-- Display Mode -->
+            <div v-else style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
               <div style="flex: 1;">
-                <div class="url-title">{{ url.name }}</div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <i v-if="url.sport" :class="getSportIcon(url.sport)" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+                  <div class="url-title">{{ url.name }}</div>
+                </div>
+                <div v-if="url.person_tag" style="margin-top: 0.25rem;">
+                  <span class="badge badge-info" style="font-size: 0.75rem;">
+                    <i class="bi bi-person"></i> {{ url.person_tag }}
+                  </span>
+                </div>
                 <a :href="url.url" target="_blank" rel="noopener" class="url-link">
                   <i class="bi bi-link-45deg"></i> {{ url.url }}
                 </a>
@@ -309,6 +444,9 @@ export default {
                 <button @click="checkNow(url.id)" class="btn-outline-primary" style="white-space: nowrap; padding: 0.5rem 1rem;">
                   <i class="bi bi-arrow-repeat"></i> Check Now
                 </button>
+                <button @click="startEdit(url)" class="btn-outline-primary" style="white-space: nowrap; padding: 0.5rem 1rem;">
+                  <i class="bi bi-pencil"></i> Edit
+                </button>
                 <button @click="removeUrl(url.id)" class="btn-danger" style="white-space: nowrap; padding: 0.5rem 1rem;">
                   <i class="bi bi-trash"></i> Remove
                 </button>
@@ -329,7 +467,15 @@ export default {
             <div v-for="url in pastUrls" :key="url.id" class="url-card" style="opacity: 0.8;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
                 <div style="flex: 1;">
-                  <div class="url-title">{{ url.name }}</div>
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i v-if="url.sport" :class="getSportIcon(url.sport)" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+                    <div class="url-title">{{ url.name }}</div>
+                  </div>
+                  <div v-if="url.person_tag" style="margin-top: 0.25rem;">
+                    <span class="badge badge-info" style="font-size: 0.75rem;">
+                      <i class="bi bi-person"></i> {{ url.person_tag }}
+                    </span>
+                  </div>
                   <a :href="url.url" target="_blank" rel="noopener" class="url-link">
                     <i class="bi bi-link-45deg"></i> {{ url.url }}
                   </a>
