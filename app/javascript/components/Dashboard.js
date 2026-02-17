@@ -389,7 +389,8 @@ export default {
           <h2 style="margin: 0;">➕ Add New Schedule to Monitor</h2>
           <i :class="formCollapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up'" style="font-size: 1.5rem; color: var(--primary-color);"></i>
         </div>
-        <form v-show="!formCollapsed" @submit.prevent="addUrl" style="margin-top: 1.5rem; padding: 1.5rem; background: var(--bg-color); border-radius: var(--radius-md);">
+        <transition name="expand">
+          <form v-show="!formCollapsed" @submit.prevent="addUrl" style="margin-top: 1.5rem; padding: 1.5rem; background: var(--bg-color); border-radius: var(--radius-md);">
           <div style="display: grid; gap: 1rem;">
             <div class="form-group" style="margin-bottom: 0;">
               <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Name/Description <span style="color: var(--accent-color);">*</span></label>
@@ -436,6 +437,7 @@ export default {
             <i class="bi bi-plus-circle"></i> Add Schedule
           </button>
         </form>
+        </transition>
       </div>
 
       <!-- Loading State -->
@@ -534,7 +536,8 @@ export default {
               </div>
 
               <!-- Expanded Content -->
-              <div v-if="!isCardCollapsed(url.id)" style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid rgba(0, 0, 0, 0.08);">
+              <transition name="expand">
+              <div v-show="!isCardCollapsed(url.id)" style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid rgba(0, 0, 0, 0.08);">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem;">
                   <div style="flex: 1;">
                     <a :href="url.url" target="_blank" rel="noopener" style="display: inline-block; margin-bottom: 1.25rem; padding: 0.5rem 1rem; background: var(--primary-color); color: white; text-decoration: none; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 500; transition: all 0.2s;" @mouseover="$event.target.style.opacity='0.9'" @mouseout="$event.target.style.opacity='1'" @click.stop>
@@ -581,6 +584,7 @@ export default {
                   </div>
                 </div>
               </div>
+              </transition>
             </div>
           </div>
         </div>
@@ -618,7 +622,8 @@ export default {
               </div>
 
               <!-- Expanded Content -->
-              <div v-if="!isCardCollapsed(url.id)" style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid rgba(0, 0, 0, 0.08);">
+              <transition name="expand">
+              <div v-show="!isCardCollapsed(url.id)" style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid rgba(0, 0, 0, 0.08);">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem;">
                   <div style="flex: 1;">
                     <a :href="url.url" target="_blank" rel="noopener" style="display: inline-block; margin-bottom: 1.25rem; padding: 0.5rem 1rem; background: var(--primary-color); color: white; text-decoration: none; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 500; transition: all 0.2s;" @mouseover="$event.target.style.opacity='0.9'" @mouseout="$event.target.style.opacity='1'" @click.stop>
@@ -651,6 +656,7 @@ export default {
                   </div>
                 </div>
               </div>
+              </transition>
             </div>
           </div>
         </div>
