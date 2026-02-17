@@ -389,7 +389,7 @@ export default {
           <h2 style="margin: 0;">➕ Add New Schedule to Monitor</h2>
           <i :class="formCollapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up'" style="font-size: 1.5rem; color: var(--primary-color);"></i>
         </div>
-        <transition name="expand">
+        <Transition name="expand">
           <form v-show="!formCollapsed" @submit.prevent="addUrl" style="margin-top: 1.5rem; padding: 1.5rem; background: var(--bg-color); border-radius: var(--radius-md);">
           <div style="display: grid; gap: 1rem;">
             <div class="form-group" style="margin-bottom: 0;">
@@ -437,7 +437,7 @@ export default {
             <i class="bi bi-plus-circle"></i> Add Schedule
           </button>
         </form>
-        </transition>
+        </Transition>
       </div>
 
       <!-- Loading State -->
@@ -536,7 +536,7 @@ export default {
               </div>
 
               <!-- Expanded Content -->
-              <transition name="expand">
+              <Transition name="expand">
               <div v-show="!isCardCollapsed(url.id)" style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid rgba(0, 0, 0, 0.08);">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem;">
                   <div style="flex: 1;">
@@ -584,7 +584,7 @@ export default {
                   </div>
                 </div>
               </div>
-              </transition>
+              </Transition>
             </div>
           </div>
         </div>
@@ -622,7 +622,7 @@ export default {
               </div>
 
               <!-- Expanded Content -->
-              <transition name="expand">
+              <Transition name="expand">
               <div v-show="!isCardCollapsed(url.id)" style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid rgba(0, 0, 0, 0.08);">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem;">
                   <div style="flex: 1;">
@@ -656,7 +656,7 @@ export default {
                   </div>
                 </div>
               </div>
-              </transition>
+              </Transition>
             </div>
           </div>
         </div>
