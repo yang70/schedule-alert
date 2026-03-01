@@ -19,6 +19,11 @@ ssh -i "$KEY_FILE" ubuntu@44.226.63.157 << 'ENDSSH'
   export PATH="$HOME/.rbenv/bin:$PATH"
   eval "$(rbenv init -)"
 
+  # Load production environment variables
+  set -a
+  source ~/schedule/.env.production
+  set +a
+
   echo "📥 Pulling latest code..."
   # Stash any local changes (like certbot's nginx modifications)
   git stash
