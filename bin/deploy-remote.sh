@@ -25,7 +25,8 @@ ssh -i "$KEY_FILE" ubuntu@44.226.63.157 << 'ENDSSH'
   git pull
 
   echo "📦 Installing dependencies..."
-  bundle install --without development test
+  bundle config set --local without 'development test'
+  bundle install
   npm install
 
   echo "🎨 Precompiling assets..."
