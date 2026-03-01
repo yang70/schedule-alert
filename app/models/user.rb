@@ -6,4 +6,14 @@ class User < ApplicationRecord
 
   has_many :monitored_urls, dependent: :destroy
   has_many :people, dependent: :destroy
+
+  after_create :notify_admin_of_signup
+
+  private
+
+  def notify_admin_of_signup
+    return if ENV['ADMIN_EMAIL'].blank?
+
+    AdminMailer.new_user_signup(self).deliver_later
+  end
 end

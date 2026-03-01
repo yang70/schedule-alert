@@ -1,0 +1,20 @@
+<h1 style="color: #1B3B6F;">New User Signup</h1>
+
+<p>A new user has registered on <strong>TourneyPing</strong>.</p>
+
+<table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #fff;">
+  <tr>
+    <td style="padding: 10px; border: 1px solid #ddd; background-color: #f8f9fa; font-weight: bold; width: 120px;">Email</td>
+    <td style="padding: 10px; border: 1px solid #ddd;"><%= @user.email %></td>
+  </tr>
+  <tr>
+    <td style="padding: 10px; border: 1px solid #ddd; background-color: #f8f9fa; font-weight: bold;">Signed up at</td>
+    <td style="padding: 10px; border: 1px solid #ddd;"><%= @user.created_at.strftime("%B %d, %Y at %I:%M %p %Z") %></td>
+  </tr>
+</table>
+
+<hr style="margin: 30px 0;">
+
+<p style="color: #666; font-size: 12px;">
+  This is an automated notification from TourneyPing.
+</p>
