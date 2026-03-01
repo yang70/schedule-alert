@@ -1,12 +1,21 @@
 <footer class="site-footer">
   <div class="container-fluid">
     <div class="footer-content">
-      <span class="footer-text">&copy; <%= Date.current.year %> TourneyPing</span>
-      <span class="footer-links">
-        <a href="https://matthewgyang.com" target="_blank" rel="noopener noreferrer">matthewgyang.com</a>
-        <span class="footer-separator">&middot;</span>
-        <a href="https://github.com/yang70/schedule-alert" target="_blank" rel="noopener noreferrer">GitHub</a>
-      </span>
+      <div class="footer-brand">
+        <img src="/logo-header.svg" alt="TourneyPing">
+        <span>TourneyPing</span>
+      </div>
+      <div class="footer-links">
+        <a href="https://matthewgyang.com" target="_blank" rel="noopener noreferrer">
+          <i class="bi bi-globe2"></i> matthewgyang.com
+        </a>
+        <a href="https://github.com/yang70/schedule-alert" target="_blank" rel="noopener noreferrer">
+          <i class="bi bi-github"></i> GitHub
+        </a>
+      </div>
+    </div>
+    <div class="footer-copyright">
+      &copy; <%= Date.current.year %> TourneyPing. All rights reserved.
     </div>
   </div>
 </footer>
