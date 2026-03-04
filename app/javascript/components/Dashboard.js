@@ -3,7 +3,6 @@ export default {
   data() {
     return {
       monitoredUrls: [],
-      recentSnapshots: [],
       people: [],
       loading: true,
       formCollapsed: true,
@@ -81,7 +80,6 @@ export default {
 
         const urlsData = await urlsResponse.json()
         this.monitoredUrls = urlsData.monitored_urls || []
-        this.recentSnapshots = urlsData.recent_snapshots || []
 
         const peopleData = await peopleResponse.json()
         this.people = peopleData || []
@@ -666,21 +664,6 @@ export default {
               </div>
               </Transition>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Recent Changes -->
-      <div v-if="recentSnapshots.length > 0" style="margin-top: 3rem;">
-        <div style="background: var(--card-bg); border-radius: var(--radius-lg); padding: 2rem; box-shadow: var(--shadow-sm);">
-          <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem;">
-            <i class="bi bi-clock-history"></i> Recent Schedule Changes
-          </h2>
-          <div v-for="snapshot in recentSnapshots" :key="snapshot.id" style="padding: 1rem; margin-bottom: 1rem; background: var(--bg-color); border-radius: var(--radius-md); border-left: 4px solid var(--accent-color);">
-            <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
-              <i class="bi bi-calendar3"></i> {{ formatDate(snapshot.checked_at) }}
-            </div>
-            <div style="color: var(--text-primary);">{{ snapshot.ai_summary }}</div>
           </div>
         </div>
       </div>
