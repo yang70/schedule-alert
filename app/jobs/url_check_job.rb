@@ -37,18 +37,25 @@ class UrlCheckJob < ApplicationJob
     schedule_changed = analysis_result[:schedule_changed]
     ai_summary = analysis_result[:summary]
 
-    # Create a new snapshot
-    snapshot = monitored_url.schedule_snapshots.create!(
-      content: content,
-      content_hash: content_hash,
-      ai_summary: ai_summary,
-      schedule_data: analysis_result[:schedule_data],
-      checked_at: Time.current,
-      changes_detected: content_changed && (schedule_changed || schedule_now_available)
-    )
-
     # Check if schedule just became available
     schedule_became_available = !monitored_url.schedule_available && schedule_now_available
+
+    # Only create snapshot if content changed or schedule became available
+    snapshot = nil
+    if is_first_check || content_changed || schedule_became_available
+      snapshot = monitored_url.schedule_snapshots.create!(
+        content: content,
+        content_hash: content_hash,
+        ai_summary: ai_summary,
+        schedule_data: analysis_result[:schedule_data],
+        checked_at: Time.current,
+        changes_detected: content_changed && (schedule_changed || schedule_now_available)
+      )
+
+      # Keep only the 2 most recent snapshots (need 2 for comparison)
+      old_snapshots = monitored_url.schedule_snapshots.ordered.offset(2)
+      old_snapshots.destroy_all if old_snapshots.any?
+    end
 
     # Update the monitored URL
     monitored_url.update!(
@@ -57,9 +64,9 @@ class UrlCheckJob < ApplicationJob
     )
 
     # Send notifications if needed
-    if schedule_became_available
+    if schedule_became_available && snapshot
       NotificationMailer.schedule_now_available(monitored_url, snapshot).deliver_later
-    elsif schedule_changed && !is_first_check
+    elsif schedule_changed && !is_first_check && snapshot
       NotificationMailer.schedule_changed(monitored_url, snapshot, last_snapshot).deliver_later
     end
 
