@@ -138,7 +138,7 @@ class OpenAiService
     }
   end
 
-  def truncate_content(content, max_length = 8000)
+  def truncate_content(content, max_length = 50000)
     # Remove script tags and excessive whitespace
     cleaned = content.gsub(/<script.*?<\/script>/m, '')
                     .gsub(/<style.*?<\/style>/m, '')
