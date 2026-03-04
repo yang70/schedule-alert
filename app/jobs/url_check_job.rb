@@ -29,7 +29,13 @@ class UrlCheckJob < ApplicationJob
     is_first_check = last_snapshot.nil?
     content_changed = !is_first_check && last_snapshot.content_hash != content_hash
 
-    # Use AI to analyze the content
+    # If content hasn't changed and schedule already detected, skip AI analysis
+    if !is_first_check && !content_changed && monitored_url.schedule_available
+      monitored_url.update!(last_checked_at: Time.current)
+      return
+    end
+
+    # Use AI to analyze the content (only when content changed or first check)
     ai_service = OpenAiService.new
     analysis_result = ai_service.analyze_schedule(content, last_snapshot&.content)
 
@@ -40,7 +46,7 @@ class UrlCheckJob < ApplicationJob
     # Check if schedule just became available
     schedule_became_available = !monitored_url.schedule_available && schedule_now_available
 
-    # Only create snapshot if content changed or schedule became available
+    # Create snapshot when content changed or schedule became available
     snapshot = nil
     if is_first_check || content_changed || schedule_became_available
       snapshot = monitored_url.schedule_snapshots.create!(
@@ -66,7 +72,7 @@ class UrlCheckJob < ApplicationJob
     # Send notifications if needed
     if schedule_became_available && snapshot
       NotificationMailer.schedule_now_available(monitored_url, snapshot).deliver_later
-    elsif schedule_changed && !is_first_check && snapshot
+    elsif schedule_changed && content_changed && !is_first_check && snapshot
       NotificationMailer.schedule_changed(monitored_url, snapshot, last_snapshot).deliver_later
     end
 
