@@ -531,6 +531,8 @@ export default {
                     <span v-if="daysUntilTournament(url.tournament_start_date) !== null && daysUntilTournament(url.tournament_start_date) >= 0" class="badge badge-primary" style="font-size: 0.75rem; font-weight: 500;">
                       {{ daysUntilTournament(url.tournament_start_date) }} days away
                     </span>
+                    <span v-if="url.schedule_available" class="badge badge-success" style="font-size: 0.75rem; font-weight: 500;">Schedule Available</span>
+                    <span v-else class="badge badge-warning" style="font-size: 0.75rem; font-weight: 500;">Waiting for Schedule</span>
                   </div>
                 </div>
               </div>
@@ -617,6 +619,8 @@ export default {
                     <span class="badge badge-secondary" style="font-size: 0.75rem; font-weight: 500;">
                       Past
                     </span>
+                    <span v-if="url.schedule_available" class="badge badge-success" style="font-size: 0.75rem; font-weight: 500;">Schedule Available</span>
+                    <span v-else class="badge badge-warning" style="font-size: 0.75rem; font-weight: 500;">Waiting for Schedule</span>
                   </div>
                 </div>
               </div>
