@@ -297,13 +297,17 @@ export default {
     },
     formatSimpleDate(dateString) {
       if (!dateString) return 'Not set'
-      return new Date(dateString).toLocaleDateString()
+      // Parse date as local time to avoid timezone shift
+      const [year, month, day] = dateString.split('-').map(Number)
+      return new Date(year, month - 1, day).toLocaleDateString()
     },
     daysUntilTournament(tournamentDate) {
       if (!tournamentDate) return null
       const today = new Date()
       today.setHours(0, 0, 0, 0)
-      const tournament = new Date(tournamentDate)
+      // Parse date as local time to avoid timezone shift
+      const [year, month, day] = tournamentDate.split('-').map(Number)
+      const tournament = new Date(year, month - 1, day)
       tournament.setHours(0, 0, 0, 0)
       const diffTime = tournament - today
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
