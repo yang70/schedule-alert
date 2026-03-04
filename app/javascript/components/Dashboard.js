@@ -5,6 +5,7 @@ export default {
       monitoredUrls: [],
       people: [],
       loading: true,
+      checkingUrls: new Set(),
       formCollapsed: true,
       pastCollapsed: true,
       collapsedCards: {},
@@ -270,6 +271,7 @@ export default {
     },
     async checkNow(id) {
       try {
+        this.checkingUrls.add(id)
         const response = await fetch(`/monitored_urls/${id}/check_now`, {
           method: 'POST',
           headers: {
@@ -280,13 +282,20 @@ export default {
         })
 
         if (response.ok) {
-          // Success - silently refresh
+          const data = await response.json()
+          // Update the specific URL in our list
+          const index = this.monitoredUrls.findIndex(url => url.id === id)
+          if (index !== -1) {
+            this.monitoredUrls[index] = data
+          }
         } else {
           alert('Failed to check URL')
         }
       } catch (error) {
         console.error('Error checking URL:', error)
         alert('Error checking URL')
+      } finally {
+        this.checkingUrls.delete(id)
       }
     },
     formatDate(dateString) {
@@ -576,8 +585,10 @@ export default {
                   </div>
 
                   <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                    <button @click.stop="checkNow(url.id)" class="btn-outline-primary" style="white-space: nowrap; padding: 0.5rem 1rem;">
-                      <i class="bi bi-arrow-repeat"></i> Check Now
+                    <button @click.stop="checkNow(url.id)" :disabled="checkingUrls.has(url.id)" class="btn-outline-primary" style="white-space: nowrap; padding: 0.5rem 1rem; position: relative;">
+                      <i :class="checkingUrls.has(url.id) ? 'bi bi-arrow-repeat spin' : 'bi bi-arrow-repeat'"></i>
+                      <span v-if="checkingUrls.has(url.id)">Checking...</span>
+                      <span v-else>Check Now</span>
                     </button>
                     <button @click.stop="startEdit(url)" class="btn-outline-primary" style="white-space: nowrap; padding: 0.5rem 1rem;">
                       <i class="bi bi-pencil"></i> Edit

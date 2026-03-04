@@ -79,11 +79,15 @@ class MonitoredUrlsController < ApplicationController
   end
 
   def check_now
-    UrlCheckJob.perform_later(@monitored_url.id)
+    # Perform the check synchronously so we can return updated data
+    UrlCheckJob.perform_now(@monitored_url.id)
+    
+    # Reload to get the updated data
+    @monitored_url.reload
 
     respond_to do |format|
       format.html { redirect_to monitored_urls_path, notice: "Checking URL now..." }
-      format.json { head :ok }
+      format.json { render json: @monitored_url.as_json(include: :person) }
     end
   end
 
