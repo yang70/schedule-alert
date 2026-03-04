@@ -47,6 +47,9 @@ class UrlCheckJob < ApplicationJob
       changes_detected: content_changed && (schedule_changed || schedule_now_available)
     )
 
+    # Check if schedule just became available
+    schedule_became_available = !monitored_url.schedule_available && schedule_now_available
+
     # Update the monitored URL
     monitored_url.update!(
       last_checked_at: Time.current,
@@ -54,7 +57,7 @@ class UrlCheckJob < ApplicationJob
     )
 
     # Send notifications if needed
-    if is_first_check && schedule_now_available
+    if schedule_became_available
       NotificationMailer.schedule_now_available(monitored_url, snapshot).deliver_later
     elsif schedule_changed && !is_first_check
       NotificationMailer.schedule_changed(monitored_url, snapshot, last_snapshot).deliver_later
