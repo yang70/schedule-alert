@@ -46,6 +46,13 @@ class UrlCheckJob < ApplicationJob
     # Check if schedule just became available
     schedule_became_available = !monitored_url.schedule_available && schedule_now_available
 
+    # Check if the actual schedule data (games) changed by comparing JSON
+    actual_schedule_changed = false
+    if !is_first_check && last_snapshot&.schedule_data && analysis_result[:schedule_data]
+      # Compare the schedule_data JSON to see if games actually changed
+      actual_schedule_changed = last_snapshot.schedule_data != analysis_result[:schedule_data]
+    end
+
     # Create snapshot when content changed or schedule became available
     snapshot = nil
     if is_first_check || content_changed || schedule_became_available
@@ -55,7 +62,7 @@ class UrlCheckJob < ApplicationJob
         ai_summary: ai_summary,
         schedule_data: analysis_result[:schedule_data],
         checked_at: Time.current,
-        changes_detected: content_changed && (schedule_changed || schedule_now_available)
+        changes_detected: actual_schedule_changed
       )
 
       # Keep only the 2 most recent snapshots (need 2 for comparison)
@@ -72,7 +79,7 @@ class UrlCheckJob < ApplicationJob
     # Send notifications if needed
     if schedule_became_available && snapshot
       NotificationMailer.schedule_now_available(monitored_url, snapshot).deliver_later
-    elsif schedule_changed && content_changed && !is_first_check && snapshot
+    elsif actual_schedule_changed && !is_first_check && snapshot
       NotificationMailer.schedule_changed(monitored_url, snapshot, last_snapshot).deliver_later
     end
 
