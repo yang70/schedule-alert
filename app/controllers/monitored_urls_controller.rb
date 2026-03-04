@@ -81,7 +81,7 @@ class MonitoredUrlsController < ApplicationController
   def check_now
     # Perform the check synchronously so we can return updated data
     UrlCheckJob.perform_now(@monitored_url.id)
-    
+
     # Reload to get the updated data
     @monitored_url.reload
 
