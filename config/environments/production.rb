@@ -58,16 +58,16 @@ Rails.application.configure do
 
   # Set host to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: ENV.fetch('APP_HOST', 'example.com') }
-  
-  # Only configure SMTP if credentials are present
-  if ENV['SMTP_USERNAME'].present? && ENV['SMTP_PASSWORD'].present?
+
+  # Only configure SMTP if Resend API key is present
+  if ENV['RESEND_API_KEY'].present?
     config.action_mailer.delivery_method = :smtp
     config.action_mailer.smtp_settings = {
-      address: ENV.fetch('SMTP_ADDRESS', 'smtp.sendgrid.net'),
-      port: ENV.fetch('SMTP_PORT', 587),
+      address: 'smtp.resend.com',
+      port: 587,
       domain: ENV.fetch('SMTP_DOMAIN', 'example.com'),
-      user_name: ENV['SMTP_USERNAME'],
-      password: ENV['SMTP_PASSWORD'],
+      user_name: 'resend',
+      password: ENV['RESEND_API_KEY'],
       authentication: 'plain',
       enable_starttls_auto: true
     }
