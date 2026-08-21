@@ -19,7 +19,7 @@ sudo apt-get install -y \
   autoconf bison build-essential libyaml-dev \
   libreadline-dev libncurses5-dev libffi-dev libgdbm-dev \
   nginx postgresql postgresql-contrib redis-server \
-  certbot python3-certbot-nginx
+  certbot python3-certbot-nginx chromium-browser
 
 # Install rbenv
 echo "💎 Installing rbenv..."
