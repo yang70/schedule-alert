@@ -8,13 +8,13 @@ Rails.application.routes.draw do
   authenticate :user do
     get "dashboard", to: "dashboard#index"
 
-    resources :monitored_urls, only: [:index, :create, :destroy, :update] do
+    resources :monitored_urls, only: [ :index, :create, :destroy, :update ] do
       member do
         post :check_now
       end
     end
 
-    resources :people, only: [:index, :create]
+    resources :people, only: [ :index, :create ]
   end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

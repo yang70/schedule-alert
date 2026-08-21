@@ -35,12 +35,12 @@ Rails.application.configure do
   config.action_mailer.raise_delivery_errors = true
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
-    address: 'smtp.resend.com',
+    address: "smtp.resend.com",
     port: 587,
-    domain: ENV.fetch('SMTP_DOMAIN', 'localhost'),
-    user_name: 'resend',
-    password: ENV.fetch('RESEND_API_KEY', ''),
-    authentication: 'plain',
+    domain: ENV.fetch("SMTP_DOMAIN", "localhost"),
+    user_name: "resend",
+    password: ENV.fetch("RESEND_API_KEY", ""),
+    authentication: "plain",
     enable_starttls_auto: true
   }
 

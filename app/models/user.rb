@@ -12,7 +12,7 @@ class User < ApplicationRecord
   private
 
   def notify_admin_of_signup
-    return if ENV['ADMIN_EMAIL'].blank?
+    return if ENV["ADMIN_EMAIL"].blank?
 
     AdminMailer.new_user_signup(self).deliver_later
   end

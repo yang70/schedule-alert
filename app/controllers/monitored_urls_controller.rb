@@ -1,6 +1,6 @@
 class MonitoredUrlsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_monitored_url, only: [:destroy, :update, :check_now]
+  before_action :set_monitored_url, only: [ :destroy, :update, :check_now ]
 
   def index
     @monitored_urls = current_user.monitored_urls.includes(:person).order(created_at: :desc)
@@ -18,10 +18,10 @@ class MonitoredUrlsController < ApplicationController
 
         render json: {
           monitored_urls: @monitored_urls.as_json(
-            except: [:created_at, :updated_at, :user_id, :person_tag],
-            include: { person: { only: [:id, :name, :color] } }
+            except: [ :created_at, :updated_at, :user_id, :person_tag ],
+            include: { person: { only: [ :id, :name, :color ] } }
           ),
-          recent_snapshots: @recent_snapshots.as_json(only: [:id, :ai_summary, :checked_at])
+          recent_snapshots: @recent_snapshots.as_json(only: [ :id, :ai_summary, :checked_at ])
         }
       end
     end
@@ -56,8 +56,8 @@ class MonitoredUrlsController < ApplicationController
         format.json {
           @monitored_url.reload
           render json: @monitored_url.as_json(
-            except: [:created_at, :updated_at, :user_id, :person_tag],
-            include: { person: { only: [:id, :name, :color] } }
+            except: [ :created_at, :updated_at, :user_id, :person_tag ],
+            include: { person: { only: [ :id, :name, :color ] } }
           )
         }
       end

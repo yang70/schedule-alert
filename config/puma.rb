@@ -30,8 +30,8 @@ threads threads_count, threads_count
 
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
 # In production, use unix socket for better performance with nginx
-if ENV['RAILS_ENV'] == 'production'
-  bind 'unix:///home/ubuntu/schedule/tmp/sockets/puma.sock'
+if ENV["RAILS_ENV"] == "production"
+  bind "unix:///home/ubuntu/schedule/tmp/sockets/puma.sock"
 else
   port ENV.fetch("PORT", 3000)
 end

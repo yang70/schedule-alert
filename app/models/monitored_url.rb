@@ -14,8 +14,8 @@ class MonitoredUrl < ApplicationRecord
   after_save :schedule_next_check, if: :tournament_start_date_changed?
 
   scope :active, -> { where(active: true) }
-  scope :upcoming_tournaments, -> { where('tournament_start_date >= ?', Date.current) }
-  scope :due_for_check, -> { active.upcoming_tournaments.where('next_check_at IS NULL OR next_check_at <= ?', Time.current) }
+  scope :upcoming_tournaments, -> { where("tournament_start_date >= ?", Date.current) }
+  scope :due_for_check, -> { active.upcoming_tournaments.where("next_check_at IS NULL OR next_check_at <= ?", Time.current) }
 
   # Calculate days until tournament
   def days_until_tournament
@@ -31,15 +31,15 @@ class MonitoredUrl < ApplicationRecord
 
     case days
     when 0..1 # Day of or day before: 5 checks (9am, 12pm, 3pm, 6pm, 10pm PT)
-      [9, 12, 15, 18, 22]
+      [ 9, 12, 15, 18, 22 ]
     when 2..4 # 2-4 days away: 4 checks (9am, 12pm, 5pm, 10pm PT)
-      [9, 12, 17, 22]
+      [ 9, 12, 17, 22 ]
     when 5..7 # 5-7 days away: 3 checks (9am, 3pm, 10pm PT)
-      [9, 15, 22]
+      [ 9, 15, 22 ]
     when 8..13 # 1-2 weeks away: 2 checks (10am, 10pm PT)
-      [10, 22]
+      [ 10, 22 ]
     else # 2+ weeks away: 1 check (10am PT)
-      [10]
+      [ 10 ]
     end
   end
 
@@ -48,7 +48,7 @@ class MonitoredUrl < ApplicationRecord
     return nil unless tournament_start_date
     return nil if days_until_tournament && days_until_tournament < 0 # Don't check past tournaments
 
-    now = Time.current.in_time_zone('Pacific Time (US & Canada)')
+    now = Time.current.in_time_zone("Pacific Time (US & Canada)")
     check_hours = todays_check_hours
 
     # Find next check hour today

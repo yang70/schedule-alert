@@ -6,7 +6,7 @@ class UrlCheckJob < ApplicationJob
     return unless monitored_url&.active?
 
     browser = Ferrum::Browser.new(
-      browser_path: '/usr/bin/google-chrome',
+      browser_path: "/usr/bin/google-chrome",
       timeout: 30,
       process_timeout: 60,
       browser_options: {

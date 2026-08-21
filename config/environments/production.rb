@@ -47,7 +47,7 @@ Rails.application.configure do
   config.active_support.report_deprecations = false
 
   # Replace the default in-process memory cache store with a durable alternative.
-  config.cache_store = :redis_cache_store, { url: ENV.fetch('REDIS_URL', 'redis://localhost:6379/1') }
+  config.cache_store = :redis_cache_store, { url: ENV.fetch("REDIS_URL", "redis://localhost:6379/1") }
 
   # Replace the default in-process and non-durable queuing backend for Active Job.
   config.active_job.queue_adapter = :sidekiq
@@ -57,18 +57,18 @@ Rails.application.configure do
   # config.action_mailer.raise_delivery_errors = false
 
   # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: ENV.fetch('APP_HOST', 'example.com') }
+  config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST", "example.com") }
 
   # Only configure SMTP if Resend API key is present
-  if ENV['RESEND_API_KEY'].present?
+  if ENV["RESEND_API_KEY"].present?
     config.action_mailer.delivery_method = :smtp
     config.action_mailer.smtp_settings = {
-      address: 'smtp.resend.com',
+      address: "smtp.resend.com",
       port: 587,
-      domain: ENV.fetch('SMTP_DOMAIN', 'example.com'),
-      user_name: 'resend',
-      password: ENV['RESEND_API_KEY'],
-      authentication: 'plain',
+      domain: ENV.fetch("SMTP_DOMAIN", "example.com"),
+      user_name: "resend",
+      password: ENV["RESEND_API_KEY"],
+      authentication: "plain",
       enable_starttls_auto: true
     }
   end

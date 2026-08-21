@@ -3,7 +3,7 @@ class AdminMailer < ApplicationMailer
     @user = user
 
     mail(
-      to: ENV['ADMIN_EMAIL'],
+      to: ENV["ADMIN_EMAIL"],
       subject: "New User Signup: #{@user.email}"
     )
   end
