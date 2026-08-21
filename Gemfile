@@ -30,8 +30,10 @@ gem "redis"
 # OpenAI Integration
 gem "ruby-openai"
 
-# HTTP Client
+# Web Scraping & HTTP Clients
 gem "httparty"
+gem "ferrum"
+gem "nokogiri"
 
 # Environment Variables
 gem "dotenv-rails", groups: [:development, :test]

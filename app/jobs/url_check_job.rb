@@ -5,21 +5,43 @@ class UrlCheckJob < ApplicationJob
     monitored_url = MonitoredUrl.find_by(id: monitored_url_id)
     return unless monitored_url&.active?
 
-    # Fetch the URL content
-    response = HTTParty.get(monitored_url.url, timeout: 10, follow_redirects: true)
+    browser = Ferrum::Browser.new(timeout: 15)
+    content = nil
 
-    # Handle 4xx errors (content not yet available)
-    if response.code >= 400 && response.code < 500
-      monitored_url.update!(
-        last_checked_at: Time.current,
-        schedule_available: false
-      )
+    begin
+      # Fetch the URL content via headless browser
+      response = browser.goto(monitored_url.url)
+
+      # Handle 4xx errors
+      if response&.status && response.status >= 400 && response.status < 500
+        monitored_url.update!(
+          last_checked_at: Time.current,
+          schedule_available: false
+        )
+        return
+      end
+
+      # Wait for network idle to ensure JS rendering is complete
+      browser.network.wait_for_idle
+
+      # Get HTML and extract visible text using Nokogiri
+      doc = Nokogiri::HTML(browser.body)
+
+      # Remove scripts and styles
+      doc.xpath("//script").remove
+      doc.xpath("//style").remove
+
+      # Extract text and squish it to normalize whitespace
+      content = doc.text.squish
+    rescue Ferrum::Error, Ferrum::TimeoutError, Net::OpenTimeout, SocketError => e
+      Rails.logger.error "Failed to check URL #{monitored_url.url}: #{e.message}"
       return
+    ensure
+      browser.quit if browser
     end
 
-    return unless response.success?
+    return if content.blank?
 
-    content = response.body
     content_hash = Digest::SHA256.hexdigest(content)
 
     # Get the last snapshot
@@ -83,7 +105,7 @@ class UrlCheckJob < ApplicationJob
       NotificationMailer.schedule_changed(monitored_url, snapshot, last_snapshot).deliver_later
     end
 
-  rescue HTTParty::Error, Net::OpenTimeout, SocketError => e
-    Rails.logger.error "Failed to check URL #{monitored_url.url}: #{e.message}"
+  rescue StandardError => e
+    Rails.logger.error "Unexpected error in UrlCheckJob for #{monitored_url.url}: #{e.message}"
   end
 end
