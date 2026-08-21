@@ -13,13 +13,20 @@ sudo apt-get update
 sudo apt-get upgrade -y
 
 # Install dependencies
-echo "📦 Installing dependencies..."
+echo "📦 Installing system dependencies..."
 sudo apt-get install -y \
   git curl libssl-dev libreadline-dev zlib1g-dev \
   autoconf bison build-essential libyaml-dev \
   libreadline-dev libncurses5-dev libffi-dev libgdbm-dev \
   nginx postgresql postgresql-contrib redis-server \
-  certbot python3-certbot-nginx chromium-browser
+  certbot python3-certbot-nginx
+
+# Install Google Chrome for Headless scraping (bypassing Snap AppArmor issues)
+echo "🌐 Installing Google Chrome..."
+wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmour -o /usr/share/keyrings/google-chrome-keyring.gpg || true
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+sudo apt-get update
+sudo apt-get install -y google-chrome-stable
 
 # Install rbenv
 echo "💎 Installing rbenv..."
