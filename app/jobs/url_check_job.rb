@@ -19,10 +19,11 @@ class UrlCheckJob < ApplicationJob
 
     begin
       # Fetch the URL content via headless browser
-      response = browser.goto(monitored_url.url)
+      browser.goto(monitored_url.url)
 
       # Handle 4xx errors
-      if response&.status && response.status >= 400 && response.status < 500
+      status = browser.network.status
+      if status && status >= 400 && status < 500
         monitored_url.update!(
           last_checked_at: Time.current,
           schedule_available: false
