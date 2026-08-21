@@ -5,7 +5,15 @@ class UrlCheckJob < ApplicationJob
     monitored_url = MonitoredUrl.find_by(id: monitored_url_id)
     return unless monitored_url&.active?
 
-    browser = Ferrum::Browser.new(timeout: 15)
+    browser = Ferrum::Browser.new(
+      timeout: 30,
+      process_timeout: 60,
+      browser_options: {
+        'no-sandbox': nil,
+        'disable-gpu': nil,
+        'disable-dev-shm-usage': nil
+      }
+    )
     content = nil
 
     begin
