@@ -323,6 +323,7 @@ export default {
     getCheckFrequency(tournamentDate) {
       const days = this.daysUntilTournament(tournamentDate)
       if (days === null || days < 0) return 'Not scheduled'
+      if (new Date().getDay() === 2) return '6x today (10am, 10:45am, 11:30am, 12:15pm, 1pm, 5pm PT)'
       if (days <= 1) return '5x daily (9am, 12pm, 3pm, 6pm, 10pm PT)'
       if (days <= 4) return '4x daily (9am, 12pm, 5pm, 10pm PT)'
       if (days <= 7) return '3x daily (9am, 3pm, 10pm PT)'
