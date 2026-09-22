@@ -35,6 +35,9 @@
               <%= current_user.email %>
             </span>
             <%= link_to "Dashboard", dashboard_path, class: "btn btn-outline-light btn-sm" %>
+            <% if current_user.admin? %>
+              <%= link_to "Admin", admin_users_path, class: "btn btn-outline-light btn-sm" %>
+            <% end %>
             <%= link_to "Sign Out", destroy_user_session_path, method: :delete, data: { turbo_method: :delete }, class: "btn btn-outline-light btn-sm" %>
           </div>
         </div>

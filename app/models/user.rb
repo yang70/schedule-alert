@@ -9,6 +9,11 @@ class User < ApplicationRecord
 
   after_create :notify_admin_of_signup
 
+  # Fails closed if ADMIN_EMAIL isn't configured, so no one gets admin access by accident.
+  def admin?
+    ENV["ADMIN_EMAIL"].present? && email == ENV["ADMIN_EMAIL"].downcase.strip
+  end
+
   private
 
   def notify_admin_of_signup
