@@ -1,0 +1,32 @@
+<h1 style="color: #1B3B6F;">Blocked Bot Sign-up Attempt</h1>
+
+<p>A sign-up attempt on <strong>TourneyPing</strong> was blocked by bot detection.</p>
+
+<table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #fff;">
+  <tr>
+    <td style="padding: 10px; border: 1px solid #ddd; background-color: #f8f9fa; font-weight: bold; width: 120px;">Email used</td>
+    <td style="padding: 10px; border: 1px solid #ddd;"><%= @email.presence || "(blank)" %></td>
+  </tr>
+  <tr>
+    <td style="padding: 10px; border: 1px solid #ddd; background-color: #f8f9fa; font-weight: bold;">Reason</td>
+    <td style="padding: 10px; border: 1px solid #ddd;"><%= @reason %></td>
+  </tr>
+  <tr>
+    <td style="padding: 10px; border: 1px solid #ddd; background-color: #f8f9fa; font-weight: bold;">IP address</td>
+    <td style="padding: 10px; border: 1px solid #ddd;"><%= @ip %></td>
+  </tr>
+  <tr>
+    <td style="padding: 10px; border: 1px solid #ddd; background-color: #f8f9fa; font-weight: bold;">User agent</td>
+    <td style="padding: 10px; border: 1px solid #ddd;"><%= @user_agent %></td>
+  </tr>
+  <tr>
+    <td style="padding: 10px; border: 1px solid #ddd; background-color: #f8f9fa; font-weight: bold;">Attempted at</td>
+    <td style="padding: 10px; border: 1px solid #ddd;"><%= @attempted_at.strftime("%B %d, %Y at %I:%M %p %Z") %></td>
+  </tr>
+</table>
+
+<hr style="margin: 30px 0;">
+
+<p style="color: #666; font-size: 12px;">
+  This is an automated notification from TourneyPing. No account was created.
+</p>

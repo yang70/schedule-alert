@@ -89,6 +89,15 @@ body {
   background: linear-gradient(135deg, var(--primary-light) 0%, var(--bg-color) 100%);
 }
 
+// Honeypot field for bot detection on sign-up; hidden from sighted users and screen readers alike.
+.honeypot-field {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 .auth-card {
   background: var(--card-bg);
   border-radius: var(--radius-lg);
