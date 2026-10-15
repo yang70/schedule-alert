@@ -620,11 +620,5 @@ a {
   box-shadow: var(--shadow-lg);
 }
 
-.notification-history-item {
-  padding: 1rem 0;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.notification-summary { white-space: pre-line; }
 .check-error { color: #92400e; margin-top: 1rem; }
 [role="button"]:focus-visible { outline: 3px solid var(--primary-color); outline-offset: 4px; }

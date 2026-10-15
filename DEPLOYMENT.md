@@ -114,7 +114,7 @@ curl --fail -H 'Host: tourneyping.com' http://127.0.0.1:3000/up
 ./bin/production-console
 ```
 
-The dashboard shows check errors and recent email delivery state. Failed checks retry after 1, 5, and 15 minutes, then return to normal polling. Unreadable content never erases the last successful schedule. Running checks use 15-minute leases; queued checks have a six-hour recovery window so a busy queue does not repeatedly replace jobs that are still waiting. Monitor queue latency and increase capacity before it approaches that window. Released schedules run once daily at 10am Pacific through their start date.
+The dashboard shows check errors. Email delivery state is available in notification records through the console. Failed checks retry after 1, 5, and 15 minutes, then return to normal polling. Unreadable content never erases the last successful schedule. Running checks use 15-minute leases; queued checks have a six-hour recovery window so a busy queue does not repeatedly replace jobs that are still waiting. Monitor queue latency and increase capacity before it approaches that window. Released schedules run once daily at 10am Pacific through their start date.
 
 Email events retry up to eight attempts; permanent SMTP rejections stop sooner. Fix provider credentials/recipient problems before deliberately retrying a failed event from the console:
 

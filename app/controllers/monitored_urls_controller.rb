@@ -12,11 +12,7 @@ class MonitoredUrlsController < ApplicationController
     respond_to do |format|
       format.html { redirect_to dashboard_path }
       format.json do
-        events = NotificationEvent.joins(:monitored_url).where(monitored_urls: { user_id: current_user.id }).order(created_at: :desc).limit(10)
-        render json: {
-          monitored_urls: @monitored_urls.map(&:public_json),
-          recent_events: events.as_json(only: %i[id kind payload created_at delivered_at delivery_attempts last_error])
-        }
+        render json: { monitored_urls: @monitored_urls.map(&:public_json) }
       end
     end
   end

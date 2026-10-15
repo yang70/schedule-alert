@@ -1,15 +1,13 @@
 <script>
 import { daysUntilTournament, safeScheduleLink } from '../date_utils.mjs'
 import ModalDialog from './ModalDialog.vue'
-import NotificationHistory from './NotificationHistory.vue'
 
 export default {
   name: 'Dashboard',
-  components: { ModalDialog, NotificationHistory },
+  components: { ModalDialog },
   data() {
     return {
       monitoredUrls: [],
-      recentEvents: [],
       loadError: '',
       people: [],
       loading: true,
@@ -102,7 +100,6 @@ export default {
 
         const urlsData = await this.readResponse(urlsResponse)
         this.monitoredUrls = urlsData.monitored_urls || []
-        this.recentEvents = urlsData.recent_events || []
         this.checkingUrls = new Set(this.monitoredUrls.filter(url => ['queued', 'running'].includes(url.check_status)).map(url => url.id))
         this.loadError = ''
 
@@ -391,8 +388,6 @@ export default {
           </div>
         </div>
       </transition>
-
-      <NotificationHistory :events="recentEvents" />
 
       <!-- Add New URL Form -->
       <div class="add-url-form">
