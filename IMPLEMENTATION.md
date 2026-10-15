@@ -54,3 +54,11 @@ Before upgrading: back up the database, install Node 22, confirm mail/OpenAI/hos
 - SMTP can duplicate an email if the worker crashes after provider acceptance but before recording delivery. Stable message identifiers and durable events reduce duplicates without claiming exactly-once delivery.
 - Docker was unavailable locally. Image build, container sandbox support, and Linux-specific limits require runtime validation before choosing the container deployment.
 - The single-host deploy script is an in-place deployment and can briefly interrupt availability. It does not implement atomic release directories.
+
+## Production rollout
+
+Deployed application revision `af153b6` to the existing Lightsail/systemd host on October 14, 2026 Pacific time. The database was backed up in custom format and its archive directory verified before migration. The backup is retained under `/home/ubuntu/backups/schedule/` on the server.
+
+The host was upgraded from Node 20 to Node 22, Linux gem variants were added to the lockfile, the monitoring migration was applied, and the existing owner account received the explicit admin role. Web and worker services were restarted with the updated units. The existing Nginx TLS configuration was preserved while its upstream changed from the former Unix socket to local TCP port 3000.
+
+Public HTTPS health, the home page, and compiled JavaScript/CSS returned HTTP 200. Web, worker, and Nginx services were active; all three scheduled jobs were registered. PDF parsing and a sandboxed Chrome fetch passed on the Linux host. [GitHub CI](https://github.com/yang70/schedule-alert/actions/runs/38676582281) passed for the deployed application revision. Live model accuracy and actual email delivery remain outside these deployment smoke checks.
