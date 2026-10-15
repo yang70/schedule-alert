@@ -18,7 +18,7 @@ sudo apt-get install -y \
   git curl libssl-dev libreadline-dev zlib1g-dev \
   autoconf bison build-essential libyaml-dev \
   libreadline-dev libncurses5-dev libffi-dev libgdbm-dev \
-  nginx postgresql postgresql-contrib redis-server \
+  nginx postgresql postgresql-contrib libpq-dev redis-server \
   certbot python3-certbot-nginx
 
 # Install Google Chrome for Headless scraping (bypassing Snap AppArmor issues)
@@ -51,7 +51,7 @@ gem install bundler
 
 # Install Node.js
 echo "📦 Installing Node.js..."
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
 # Configure PostgreSQL
@@ -84,4 +84,4 @@ echo "3. Run bundle install and setup database"
 echo "4. Install systemd services and nginx config"
 echo ""
 echo "Database password: (save this!)"
-echo "DATABASE_URL=postgresql://ubuntu:$DB_PASSWORD@localhost/schedule_production"
+echo "Save the database password in .env.production; it will not be printed."

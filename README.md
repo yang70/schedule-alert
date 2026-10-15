@@ -1,403 +1,80 @@
 # TourneyPing
 
-A web application that monitors sports tournament schedule URLs and notifies users when schedules become available or change. Uses AI (OpenAI/ChatGPT) to intelligently detect and summarize schedule changes.
+TourneyPing monitors the tournament schedule page you supply and emails you when a schedule is released or meaningfully changes. OpenAI evaluates different providers' pages instead of requiring a custom parser for each provider.
 
-## Features
+A released schedule needs real game dates and times. Opponents and venues may still be TBD. Relevant linked PDFs and visible HTML iframes are included when their contents can be read. A link alone is not release evidence. Image-only PDFs, unreadable documents, challenges, and ambiguous responses preserve the last successful state and produce a visible check warning or error.
 
-- 🔐 **User Authentication** - Secure email/password login with Devise
-- 🔗 **URL Monitoring** - Track multiple tournament schedule URLs
-- 🤖 **AI-Powered Analysis** - Uses OpenAI to detect schedule availability and changes
-- 📧 **Email Notifications** - Get notified when schedules appear or change
-- ⚡ **Background Processing** - Sidekiq workers check URLs every 15 minutes
-- 💾 **Change History** - Track all schedule changes over time
-- 🎨 **Modern UI** - Vue.js frontend with Bootstrap styling
+Before release, check times adapt to tournament proximity, with extra Tuesday checks. After release, checks run once daily at 10am Pacific, through the start date. Automatic checks stop after that date. A minute dispatcher honors the scheduled times; it does not fetch every URL every minute.
 
-## Technology Stack
+## Local setup
 
-### Backend
-- Ruby 3.3.10
-- Rails 8.1.2
-- PostgreSQL (database)
-- Redis (caching & background jobs)
-- Sidekiq (async job processing)
-- Devise (authentication)
+Requirements: Ruby 3.3.10, Node 22 (see `.node-version`), PostgreSQL, Redis, and Chrome or Chromium with its sandbox enabled.
 
-### Frontend
-- Vue.js 3
-- Bootstrap 5
-- Turbo & Stimulus (Hotwire)
-- ESBuild (asset bundling)
-
-### Integrations
-- OpenAI API (GPT-4o-mini) for schedule analysis
-- SendGrid/Mailgun for email delivery
-- HTTParty for HTTP requests
-
-### Infrastructure
-- Docker & Docker Compose
-- AWS deployment ready (ECS, EC2, RDS, ElastiCache)
-- Kamal for deployment automation
-
-## Prerequisites
-
-- Ruby 3.3.10 (via rbenv or rvm)
-- PostgreSQL 14+
-- Redis 7+
-- Node.js 18+ and npm
-- OpenAI API key
-- SMTP credentials (SendGrid or Mailgun)
-
-## Installation
-
-### 1. Clone the Repository
 ```bash
-git clone <repository-url>
-cd schedule
-```
-
-### 2. Install Dependencies
-```bash
-# Install Ruby gems
-bundle install
-
-# Install JavaScript packages
-npm install
-```
-
-### 3. Set Up Environment Variables
-```bash
-# Copy the example file
 cp .env.example .env
-
-# Edit .env and add your credentials
-# - OpenAI API key
-# - SMTP credentials
-# - Database URL (if not using default)
-```
-
-### 4. Set Up Database
-```bash
-# Create and migrate database
-rails db:create
-rails db:migrate
-```
-
-### 5. Start Services
-
-#### Option A: Using Docker Compose (Recommended)
-```bash
-# Start PostgreSQL and Redis
-docker-compose up -d db redis
-
-# Run migrations
-rails db:migrate
-
-# Start Rails server
+# Fill in OpenAI and SMTP credentials. Set CHROME_PATH if needed.
+bundle install
+npm ci
+# Use existing local PostgreSQL/Redis, or start containers:
+docker compose up -d db redis
+# With container PostgreSQL, set DATABASE_URL to
+# postgresql://postgres:password@localhost:5432/schedule_development
+bin/rails db:prepare
 bin/dev
 ```
 
-#### Option B: Manual Setup
-```bash
-# Make sure PostgreSQL and Redis are running locally
+Visit http://localhost:3000. New accounts confirm their account email before signing in. Alternate notification email addresses require only a valid format, with no ownership verification.
 
-# In terminal 1: Start Rails server
-rails server
+`docker compose --profile app up --build` is an optional container development path. Browser sandbox support must be available in the container runtime; disabling Chrome's sandbox is not supported.
 
-# In terminal 2: Start Sidekiq
-bundle exec sidekiq
+## Architecture
 
-# In terminal 3: Start asset compilation (optional for development)
-npm run build
-```
+- Rails, PostgreSQL, Devise, Vue, Bootstrap, and Sidekiq.
+- Manual checks return immediately with a queued status; the dashboard refreshes every 15 seconds while visible.
+- A separate Sidekiq capsule bounds browser concurrency (default one), leaving capacity for dispatch and email delivery.
+- Browser navigation, redirects, and subresources use a validating proxy that rejects private/reserved addresses and connects to a checked IP. PDF downloads apply the same checks and bound size/time. PDF parsing runs in a separate process with CPU/output limits.
+- AI release classification and game-detail extraction are separate. Missing details cannot suppress a grounded release alert. Successful analyses, including “not posted,” are cached by source, tournament date, content, model, and prompt version.
+- Complete game timetables are normalized before comparison. Partial detail extraction preserves the previous comparison baseline and is retried at the next check.
+- Per-URL leases prevent overlapping checks. Source/date edits create a new revision so old results cannot overwrite the new source.
+- State transitions and immutable email events commit together. Email delivery retries independently; pending events survive snapshot pruning. Compact notification history is retained while only two full page snapshots remain.
 
-### 6. Access the Application
-Open your browser and visit:
-- **Application:** http://localhost:3000
-- **Sidekiq Dashboard:** http://localhost:3000/sidekiq (development only)
-
-## Usage
-
-### 1. Create an Account
-- Navigate to http://localhost:3000
-- Click "Sign up" and create an account
-
-### 2. Add URLs to Monitor
-- Once logged in, you'll see the dashboard
-- Fill in the form with:
-  - **Name:** A descriptive name for the schedule (e.g., "Spring Soccer Tournament 2026")
-  - **URL:** The web page URL to monitor
-  - **Notification Email:** (Optional) Override email for notifications
-
-### 3. How It Works
-1. **Initial Check:** When you add a URL, the system immediately checks it
-2. **AI Analysis:** OpenAI analyzes the page to determine if a schedule is present
-3. **Regular Monitoring:** Sidekiq checks all active URLs every 15 minutes
-4. **Change Detection:** When changes are detected, AI summarizes what changed
-5. **Notifications:** Email alerts are sent for:
-   - Schedule becomes available (first time)
-   - Schedule changes (subsequent updates)
-
-### 4. Managing URLs
-- **Check Now:** Manually trigger an immediate check
-- **Remove:** Stop monitoring a URL
-- **View History:** See all detected changes with AI summaries
+SMTP delivery has an unavoidable ambiguity if a process dies after the provider accepts a message but before the database records delivery. Stable Message-IDs help identify such duplicates; SMTP does not guarantee exactly-once delivery.
 
 ## Configuration
 
-### Email Settings
-Edit `.env` to configure your email provider:
+See `.env.example`. Important settings include:
 
-**SendGrid:**
-```bash
-SMTP_ADDRESS=smtp.sendgrid.net
-SMTP_PORT=587
-SMTP_USERNAME=apikey
-SMTP_PASSWORD=your_sendgrid_api_key
-```
+| Setting | Default / purpose |
+| --- | --- |
+| `OPENAI_MODEL` | `gpt-4o-mini`; changing it invalidates analysis cache keys |
+| `CHROME_PATH` | Automatic browser discovery unless supplied |
+| `BROWSER_CONCURRENCY` | `1`; increase only after measuring memory and latency |
+| `DB_POOL` | `10`; cover total Sidekiq concurrency if increased |
+| `MAX_URLS_PER_USER` | `50` retained monitored URLs |
+| `SMTP_*` | Environment-driven SMTP, including SendGrid/Mailgun |
+| `RESEND_API_KEY` | Resend fallback when `SMTP_ADDRESS` is absent |
+| `ADMIN_EMAIL` | Signup/bot-summary recipient only; grants no privileges |
 
-**Mailgun:**
-```bash
-SMTP_ADDRESS=smtp.mailgun.org
-SMTP_PORT=587
-SMTP_USERNAME=postmaster@mg.yourdomain.com
-SMTP_PASSWORD=your_mailgun_smtp_password
-```
+Admin roles must be explicitly provisioned for a trusted account. See [DEPLOYMENT.md](DEPLOYMENT.md). Public signup remains enabled, with request limits and signed signup timing tokens. Manual checks have a five-minute cooldown and account request limits.
 
-### OpenAI Configuration
-```bash
-OPENAI_API_KEY=sk-...your-key-here
-```
+## Verification
 
-### Monitoring Frequency
-Edit `config/sidekiq.yml` to change check frequency:
-```yaml
-:schedule:
-  check_all_urls:
-    cron: '*/15 * * * *'  # Every 15 minutes (default)
-```
-
-## Deployment
-
-### AWS Deployment
-See [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md) for detailed instructions on deploying to:
-- AWS ECS (Fargate)
-- AWS EC2
-- AWS Elastic Beanstalk
-
-### Quick Docker Deployment
-```bash
-# Build and run with Docker Compose
-docker-compose -f docker-compose.production.yml up -d
-
-# Run migrations
-docker-compose -f docker-compose.production.yml run web rails db:migrate
-```
-
-## Production Management
-
-### Production Console Access
-
-When deployed to a server (without Docker), use these helper scripts to run Rails commands with the proper environment variables loaded:
+Use a dedicated test database; never point tests at development or production data.
 
 ```bash
-# Interactive Rails console
-./bin/production-console
-
-# Run one-off commands
-./bin/production-runner "MonitoredUrl.count"
-./bin/production-runner "puts MonitoredUrl.due_for_check.map(&:name)"
+RAILS_ENV=test DATABASE_URL=postgresql:///schedule_test bin/rails db:prepare
+RAILS_ENV=test DATABASE_URL=postgresql:///schedule_test bin/rails test
+npm test
+NODE_ENV=production npm run build
+npm run build:css
+# Optional real Chrome smoke test with local fixtures (no OpenAI calls):
+RAILS_ENV=test bin/rails runner bin/check-fetching
+bin/rubocop
+bin/brakeman --no-pager --exit-on-warn --exit-on-error
+bin/bundler-audit check --update
+npm audit
 ```
 
-These scripts automatically load environment variables from `.env.production` and set `RAILS_ENV=production`.
+Routine tests mock HTTP/OpenAI boundaries and send mail only to Rails' test delivery store. An optional live release evaluation is available with `bin/rails runner bin/evaluate-schedules`; it calls OpenAI using your configured key and reports expected classifications, latency, and token usage. Keep it separate from routine CI.
 
-### Monitoring Background Jobs
-
-```bash
-# View worker logs
-sudo journalctl -u tourneyping-worker.service -f
-
-# Check worker status
-sudo systemctl status tourneyping-worker.service
-
-# Restart worker
-sudo systemctl restart tourneyping-worker.service
-```
-
-### Viewing Application Logs
-
-```bash
-# View web server logs
-sudo journalctl -u tourneyping-web.service -f
-
-# View both services
-sudo journalctl -u tourneyping-web.service -u tourneyping-worker.service -f
-```
-
-## Development
-
-### Running Tests
-```bash
-# Run all tests (when test suite is set up)
-rails test
-```
-
-### Console Access
-```bash
-# Rails console
-rails console
-
-# Check monitored URLs
-MonitoredUrl.all
-
-# Manually trigger a check
-UrlCheckJob.perform_now(monitored_url_id)
-```
-
-### Database Console
-```bash
-rails dbconsole
-```
-
-## Project Structure
-
-```
-schedule/
-├── app/
-│   ├── controllers/         # Rails controllers
-│   │   ├── dashboard_controller.rb
-│   │   └── monitored_urls_controller.rb
-│   ├── jobs/                # Sidekiq background jobs
-│   │   ├── url_check_job.rb
-│   │   └── check_all_urls_job.rb
-│   ├── mailers/             # Email mailers
-│   │   └── notification_mailer.rb
-│   ├── models/              # ActiveRecord models
-│   │   ├── user.rb
-│   │   ├── monitored_url.rb
-│   │   └── schedule_snapshot.rb
-│   ├── services/            # Business logic services
-│   │   └── open_ai_service.rb
-│   ├── javascript/          # Vue.js frontend
-│   │   ├── application.js
-│   │   └── components/
-│   │       └── Dashboard.js
-│   └── views/               # ERB templates
-├── config/
-│   ├── database.yml         # Database configuration
-│   ├── sidekiq.yml          # Sidekiq configuration
-│   └── routes.rb            # Application routes
-├── db/
-│   └── migrate/             # Database migrations
-├── docker-compose.yml       # Docker setup
-├── Dockerfile               # Docker image definition
-├── .env.example             # Environment variables template
-└── README.md                # This file
-```
-
-## Key Models
-
-### User
-- Authenticated via Devise
-- Has many MonitoredUrls
-
-### MonitoredUrl
-- Belongs to User
-- Tracks URL, name, active status
-- Has many ScheduleSnapshots
-
-### ScheduleSnapshot
-- Belongs to MonitoredUrl
-- Stores historical content and AI analysis
-- Tracks changes over time
-
-## Background Jobs
-
-### UrlCheckJob
-- Checks a single URL
-- Fetches content via HTTParty
-- Analyzes with OpenAI
-- Creates snapshot
-- Sends notifications if needed
-
-### CheckAllUrlsJob
-- Runs every 15 minutes (configurable)
-- Queues UrlCheckJob for all active URLs
-
-## Troubleshooting
-
-### PostgreSQL Connection Issues
-```bash
-# Check if PostgreSQL is running
-ps aux | grep postgres
-
-# Start PostgreSQL
-# macOS:
-brew services start postgresql
-
-# Linux:
-sudo systemctl start postgresql
-```
-
-### Redis Connection Issues
-```bash
-# Check if Redis is running
-redis-cli ping
-
-# Start Redis
-# macOS:
-brew services start redis
-
-# Linux:
-sudo systemctl start redis
-```
-
-### Sidekiq Not Processing Jobs
-```bash
-# Check Sidekiq process
-ps aux | grep sidekiq
-
-# Restart Sidekiq
-bundle exec sidekiq -C config/sidekiq.yml
-```
-
-### OpenAI API Errors
-- Verify your API key is correct in `.env`
-- Check your OpenAI account has credits
-- Review rate limits in OpenAI dashboard
-
-## Future Enhancements
-
-- [ ] SMS notifications via Twilio
-- [ ] Mobile app (React Native)
-- [ ] Webhook notifications
-- [ ] Custom check frequencies per URL
-- [ ] Schedule comparison view
-- [ ] Multi-language support
-- [ ] API for external integrations
-- [ ] Schedule export (PDF, iCal)
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License.
-
-## Support
-
-For issues and questions:
-- Open an issue on GitHub
-- Check existing documentation
-- Review error logs in `log/` directory
-
-## Acknowledgments
-
-- Built with Ruby on Rails
-- Powered by OpenAI
-- UI components from Bootstrap
-- Icons from Bootstrap Icons
+The supported default production path is [Lightsail/systemd](DEPLOYMENT.md). [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md) describes the alternative Docker/Kamal path; the two deployment methods are alternatives, not layers of the same setup.

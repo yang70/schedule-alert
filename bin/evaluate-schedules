@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+# Run explicitly with: bin/rails runner bin/evaluate-schedules
+cases = JSON.parse(Rails.root.join("test/fixtures/release_evaluations.json").read)
+service = OpenAiService.new
+passed = 0
+cases.each do |sample|
+  begin
+    result = service.analyze_schedule(sample.fetch("content"), tournament_date: Date.iso8601(sample.fetch("date")))
+    actual = result.fetch(:status)
+    puts "#{sample.fetch('name')}: expected=#{sample.fetch('expected')} actual=#{actual} tokens=#{result.dig(:metadata, :usage)} latency_ms=#{result.dig(:metadata, :latency_ms)}"
+  rescue OpenAiService::Uncertain
+    actual = "unknown"
+    puts "#{sample.fetch('name')}: expected=#{sample.fetch('expected')} actual=unknown"
+  rescue MonitoringError => error
+    actual = "error"
+    puts "#{sample.fetch('name')}: API/validation failure (#{error.class.name})"
+  end
+  passed += 1 if actual == sample.fetch("expected")
+end
+puts "#{passed}/#{cases.size} release evaluations passed"
+exit(passed == cases.size ? 0 : 1)

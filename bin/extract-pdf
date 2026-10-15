@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+require "bundler/setup"
+require "pdf/reader"
+
+reader = PDF::Reader.new(ARGV.fetch(0))
+abort "PDF page limit exceeded" if reader.page_count > 50
+text = reader.pages.map(&:text).join("\n\n")
+abort "PDF text limit exceeded" if text.length > 50_000
+STDOUT.write(text)

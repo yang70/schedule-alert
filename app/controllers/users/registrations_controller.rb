@@ -1,5 +1,6 @@
 class Users::RegistrationsController < Devise::RegistrationsController
   before_action :block_bot_signups, only: :create
+  rate_limit to: 10, within: 10.minutes, name: "signups", only: :create
 
   private
 
@@ -23,10 +24,10 @@ class Users::RegistrationsController < Devise::RegistrationsController
   end
 
   def submitted_too_quickly?
-    rendered_at = params[:form_rendered_at].presence&.to_i
-    return true if rendered_at.blank?
-
-    (Time.current.to_i - rendered_at) < 2
+    rendered_at = Rails.application.message_verifier(:signup_form).verified(params[:form_rendered_at].to_s)
+    return true unless rendered_at.is_a?(Integer)
+    elapsed = Time.current.to_i - rendered_at
+    elapsed < 2 || elapsed > 24.hours.to_i
   end
 
   def bot_reason
@@ -37,6 +38,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   def notify_admin_of_bot_attempt
     return if ENV["ADMIN_EMAIL"].blank?
+    return unless Rails.cache.write("bot-signup-admin-notice", true, expires_in: 1.hour, unless_exist: true)
 
     AdminMailer.bot_signup_attempt(
       email: params.dig(:user, :email),

@@ -1,20 +1,10 @@
-# Run using bin/ci
-
 CI.run do
   step "Setup", "bin/setup --skip-server"
-
+  step "Tests", "bin/rails test"
+  step "JavaScript tests", "npm test"
+  step "Production assets", "NODE_ENV=production npm run build"
   step "Style: Ruby", "bin/rubocop"
-
-  step "Security: Gem audit", "bin/bundler-audit"
-  step "Security: Yarn vulnerability audit", "yarn audit"
-  step "Security: Brakeman code analysis", "bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error"
-
-
-  # Optional: set a green GitHub commit status to unblock PR merge.
-  # Requires the `gh` CLI and `gh extension install basecamp/gh-signoff`.
-  # if success?
-  #   step "Signoff: All systems go. Ready for merge and deploy.", "gh signoff"
-  # else
-  #   failure "Signoff: CI failed. Do not merge or deploy.", "Fix the issues and try again."
-  # end
+  step "Security: Gem audit", "bin/bundler-audit check --update"
+  step "Security: npm audit", "npm audit"
+  step "Security: Brakeman", "bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error"
 end

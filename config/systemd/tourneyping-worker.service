@@ -1,6 +1,6 @@
 [Unit]
 Description=Tourneyping Background Worker (Sidekiq)
-After=network.target
+After=network.target postgresql.service redis-server.service
 
 [Service]
 Type=simple
@@ -12,6 +12,11 @@ EnvironmentFile=/home/ubuntu/schedule/.env.production
 ExecStart=/home/ubuntu/.rbenv/shims/bundle exec sidekiq -C config/sidekiq.yml
 Restart=always
 RestartSec=10
+TimeoutStopSec=90
+PrivateTmp=true
+ProtectSystem=full
+MemoryMax=1G
+UMask=0077
 
 [Install]
 WantedBy=multi-user.target

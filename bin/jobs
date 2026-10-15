@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
-
-require_relative "../config/environment"
-require "solid_queue/cli"
-
-SolidQueue::Cli.start(ARGV)
+require "rubygems"
+require "bundler/setup"
+ARGV.unshift("-C", File.expand_path("../config/sidekiq.yml", __dir__)) unless ARGV.include?("-C") || ARGV.include?("--config")
+load Gem.bin_path("sidekiq", "sidekiq")

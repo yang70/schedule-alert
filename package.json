@@ -4,8 +4,9 @@
   "scripts": {
     "build": "node esbuild.config.js",
     "build:watch": "node esbuild.watch.js",
-    "build:css": "sass ./app/assets/stylesheets/application.bootstrap.scss:./app/assets/builds/application.css --no-source-map --load-path=node_modules",
-    "watch:css": "sass ./app/assets/stylesheets/application.bootstrap.scss:./app/assets/builds/application.css --watch --no-source-map --load-path=node_modules"
+    "build:css": "sass ./app/assets/stylesheets/application.bootstrap.scss:./app/assets/builds/application.css --no-source-map --style=compressed --quiet-deps --load-path=node_modules",
+    "watch:css": "sass ./app/assets/stylesheets/application.bootstrap.scss:./app/assets/builds/application.css --watch --no-source-map --quiet-deps --load-path=node_modules",
+    "test": "node --test test/javascript/*.test.mjs"
   },
   "browserslist": [
     "defaults"
@@ -16,15 +17,14 @@
     "@popperjs/core": "^2.11.8",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
-    "esbuild-plugin-vue-next": "^0.1.4",
     "vue": "^3.5.27"
   },
   "devDependencies": {
-    "autoprefixer": "^10.4.24",
-    "esbuild": "^0.27.3",
-    "nodemon": "^3.1.11",
-    "postcss": "^8.5.6",
-    "postcss-cli": "^11.0.1",
-    "sass": "^1.97.3"
+    "esbuild": "^0.28.2",
+    "sass": "^1.97.3",
+    "@vue/compiler-sfc": "^3.5.27"
+  },
+  "engines": {
+    "node": ">=22 <23"
   }
 }

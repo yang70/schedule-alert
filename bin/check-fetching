@@ -1,0 +1,93 @@
+#!/usr/bin/env ruby
+# Run with RAILS_ENV=test DATABASE_URL=postgresql:///schedule_test bin/rails runner bin/check-fetching
+abort "Use the test environment for the fetching smoke check" unless Rails.env.test?
+require "minitest/mock"
+require "timeout"
+
+server = TCPServer.new("127.0.0.1", 0)
+port = server.addr[1]
+fixture_pdf = Rails.root.join("test/fixtures/files/schedule.pdf").binread
+fixture = Thread.new do
+  loop do
+    socket = server.accept
+    begin
+      request = socket.gets
+      while (header = socket.gets) && header != "\r\n"; end
+      path = request.to_s.split(" ")[1]
+      status = 200
+      headers = "Content-Type: text/html\r\n"
+      body = case path
+      when "/schedule"
+        '<html><body><main><h1>October 17, 2026</h1><iframe src="/embedded"></iframe><a href="/schedule.pdf">Schedule PDF</a><iframe src="http://169.254.169.254/latest/meta-data/"></iframe></main></body></html>'
+      when "/embedded"
+        '<html><body><table><tr><td>10:00 AM</td><td>Falcons vs TBD</td></tr></table><div style="display:none">Hidden old games</div></body></html>'
+      when "/schedule.pdf"
+        headers = "Content-Type: application/pdf\r\n"
+        fixture_pdf
+      when "/redirect"
+        status = 302
+        headers += "Location: http://169.254.169.254/latest/meta-data/\r\n"
+        "Redirecting"
+      else
+        "Fixture resource"
+      end
+      socket.write("HTTP/1.1 #{status} Fixture\r\n#{headers}Content-Length: #{body.bytesize}\r\nConnection: close\r\n\r\n")
+      socket.write(body)
+    ensure
+      socket.close
+    end
+  end
+rescue IOError, Errno::EBADF
+  nil
+end
+original_tcp = Socket.method(:tcp)
+original_open = TCPSocket.method(:open)
+connections = []
+connect = lambda do |host, destination_port, *args, **options|
+  if host == "8.8.8.8" && destination_port.to_i == 80
+    connections << [ host, destination_port ]
+    original_tcp.call("127.0.0.1", port, *args, **options)
+  elsif [ "127.0.0.1", "localhost", "::1" ].include?(host)
+    original_tcp.call(host, destination_port, *args, **options)
+  else
+    raise SocketError, "External networking disabled in smoke check"
+  end
+end
+resolve = ->(hostname) { hostname == "fixture.example.com" ? [ "8.8.8.8" ] : [ "127.0.0.1" ] }
+begin
+  tcp_open = lambda do |host, destination_port, *args, **options, &block|
+    if host == "8.8.8.8" && destination_port.to_i == 80
+      connections << [ host, destination_port ]
+      original_open.call("127.0.0.1", port, *args, **options, &block)
+    elsif [ "127.0.0.1", "localhost", "::1" ].include?(host)
+      original_open.call(host, destination_port, *args, **options, &block)
+    else
+      raise SocketError, "External networking disabled in smoke check"
+    end
+  end
+  TCPSocket.stub(:open, tcp_open) do
+    Socket.stub(:tcp, connect) do
+    Resolv.stub(:getaddresses, resolve) do
+      result = ScheduleFetcher.new.fetch("http://fixture.example.com/schedule")
+      abort "Embedded timetable was missed" unless result.text.include?("10:00 AM Falcons vs TBD")
+      abort "Linked PDF was missed" unless result.text.include?("Tournament schedule 2026-10-17")
+      abort "Hidden content leaked into evidence" if result.text.include?("Hidden old games")
+      abort "Failed iframe was not marked incomplete" if result.complete
+      pdf = ScheduleFetcher.new.fetch("http://fixture.example.com/schedule.pdf")
+      abort "Direct PDF was missed" unless pdf.complete && pdf.text.include?("2026-10-17")
+      begin
+        ScheduleFetcher.new.fetch("http://fixture.example.com/redirect")
+        abort "Private redirect was allowed"
+      rescue MonitoringError
+        # The redirect must fail before a private upstream connection is opened.
+      end
+    end
+    end
+  end
+  abort "No pinned connections were observed" if connections.empty?
+  puts "Real Chrome, visible iframe content, linked/direct PDF, DNS pinning and private redirect checks passed"
+ensure
+  server.close
+  fixture.join(1)
+  fixture.kill if fixture.alive?
+end

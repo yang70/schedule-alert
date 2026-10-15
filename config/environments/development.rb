@@ -29,20 +29,6 @@ Rails.application.configure do
   config.cache_store = :memory_store
 
   # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service = :local
-
-  # Configure Action Mailer for development
-  config.action_mailer.raise_delivery_errors = true
-  config.action_mailer.delivery_method = :smtp
-  config.action_mailer.smtp_settings = {
-    address: "smtp.resend.com",
-    port: 587,
-    domain: ENV.fetch("SMTP_DOMAIN", "localhost"),
-    user_name: "resend",
-    password: ENV.fetch("RESEND_API_KEY", ""),
-    authentication: "plain",
-    enable_starttls_auto: true
-  }
 
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false

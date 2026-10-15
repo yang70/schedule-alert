@@ -1,0 +1,14 @@
+<%= @released ? "SCHEDULE NOW AVAILABLE!" : "SCHEDULE UPDATED!" %>
+<%= @payload.fetch("name") %>
+
+<%= @payload.fetch("summary") %>
+
+Source schedule: <%= safe_external_url(@payload.fetch("url")) %>
+<% if @released %>
+<% @payload.fetch("evidence", []).each do |item| %>
+<%= item["quote"] %>
+<% end %>
+<% end %>
+Checked at: <%= @checked_at.strftime("%B %d, %Y at %I:%M %p %Z") %>
+
+Manage monitored URLs from your TourneyPing dashboard.

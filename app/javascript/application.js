@@ -3,24 +3,21 @@ import "@hotwired/turbo-rails"
 import "./controllers"
 import * as bootstrap from "bootstrap"
 import { createApp } from 'vue'
-import Dashboard from './components/Dashboard.js'
+import Dashboard from './components/Dashboard.vue'
 
-// Initialize Vue components
+let dashboardApp = null
+
 function initializeVue() {
-  // Dashboard component
-  const dashboardElement = document.getElementById('dashboard-app')
-  if (dashboardElement) {
-    // Check if already mounted
-    if (!dashboardElement.hasAttribute('data-vue-mounted')) {
-      const app = createApp(Dashboard)
-      app.mount('#dashboard-app')
-      dashboardElement.setAttribute('data-vue-mounted', 'true')
-    }
+  const element = document.getElementById('dashboard-app')
+  if (element && !dashboardApp) {
+    dashboardApp = createApp(Dashboard)
+    dashboardApp.mount(element)
   }
 }
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', initializeVue)
-
-// Initialize on Turbo navigation (for Hotwire/Turbo)
+document.addEventListener('turbo:before-cache', () => {
+  dashboardApp?.unmount()
+  dashboardApp = null
+})
 document.addEventListener('turbo:load', initializeVue)
+document.addEventListener('DOMContentLoaded', initializeVue)

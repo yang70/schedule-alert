@@ -599,3 +599,32 @@ a {
   animation: spin 1s linear infinite;
   display: inline-block;
 }
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.dialog-panel {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  width: min(90%, 500px);
+  max-height: 90vh;
+  overflow: auto;
+  box-shadow: var(--shadow-lg);
+}
+
+.notification-history-item {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.notification-summary { white-space: pre-line; }
+.check-error { color: #92400e; margin-top: 1rem; }
+[role="button"]:focus-visible { outline: 3px solid var(--primary-color); outline-offset: 4px; }

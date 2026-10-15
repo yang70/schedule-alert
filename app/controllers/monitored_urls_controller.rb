@@ -1,27 +1,21 @@
 class MonitoredUrlsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_monitored_url, only: [ :destroy, :update, :check_now ]
+  before_action :set_monitored_url, only: %i[destroy update check_now]
+  rescue_from ActiveRecord::RecordNotFound do
+    render json: { errors: [ "Monitored URL not found." ] }, status: :not_found
+  end
+  rate_limit to: 30, within: 1.hour, name: "monitor_changes", only: %i[create update check_now], by: -> { current_user.id },
+    with: -> { render json: { errors: [ "Too many changes or checks. Please try again later." ] }, status: :too_many_requests }
 
   def index
-    @monitored_urls = current_user.monitored_urls.includes(:person).order(created_at: :desc)
-    @monitored_url = MonitoredUrl.new
-
+    @monitored_urls = current_user.monitored_urls.select(*(MonitoredUrl::PUBLIC_ATTRIBUTES + %i[source_revision release_notified_revision])).includes(:person).order(created_at: :desc)
     respond_to do |format|
-      format.html
+      format.html { redirect_to dashboard_path }
       format.json do
-        @recent_snapshots = ScheduleSnapshot
-                              .joins(:monitored_url)
-                              .where(monitored_urls: { user_id: current_user.id })
-                              .where(changes_detected: true)
-                              .order(checked_at: :desc)
-                              .limit(10)
-
+        events = NotificationEvent.joins(:monitored_url).where(monitored_urls: { user_id: current_user.id }).order(created_at: :desc).limit(10)
         render json: {
-          monitored_urls: @monitored_urls.as_json(
-            except: [ :created_at, :updated_at, :user_id, :person_tag ],
-            include: { person: { only: [ :id, :name, :color ] } }
-          ),
-          recent_snapshots: @recent_snapshots.as_json(only: [ :id, :ai_summary, :checked_at ])
+          monitored_urls: @monitored_urls.map(&:public_json),
+          recent_events: events.as_json(only: %i[id kind payload created_at delivered_at delivery_attempts last_error])
         }
       end
     end
@@ -29,65 +23,53 @@ class MonitoredUrlsController < ApplicationController
 
   def create
     @monitored_url = current_user.monitored_urls.build(monitored_url_params)
-
-    if @monitored_url.save
-      # Queue a job to check this URL immediately
-      UrlCheckJob.perform_later(@monitored_url.id)
-
+    saved = current_user.with_lock { @monitored_url.save }
+    if saved
+      @monitored_url.request_check!
       respond_to do |format|
-        format.html { redirect_to dashboard_path, notice: "URL added successfully and checking now." }
-        format.json { render json: @monitored_url, status: :created }
+        format.html { redirect_to dashboard_path, notice: "URL added. Its first check is queued." }
+        format.json { render json: @monitored_url.reload.public_json, status: :created }
       end
     else
-      respond_to do |format|
-        format.html do
-          @monitored_urls = current_user.monitored_urls.order(created_at: :desc)
-          render :index, status: :unprocessable_entity
-        end
-        format.json { render json: { errors: @monitored_url.errors.full_messages }, status: :unprocessable_entity }
-      end
+      render_errors
     end
   end
 
   def update
-    if @monitored_url.update(monitored_url_params)
+    source_changed = false
+    saved = @monitored_url.with_lock do
+      result = @monitored_url.update(monitored_url_params)
+      source_changed = result && (@monitored_url.saved_change_to_url? || @monitored_url.saved_change_to_tournament_start_date? || @monitored_url.saved_change_to_active?)
+      result
+    end
+    if saved
+      @monitored_url.request_check! if source_changed
       respond_to do |format|
-        format.html { redirect_to monitored_urls_path, notice: "URL updated successfully." }
-        format.json {
-          @monitored_url.reload
-          render json: @monitored_url.as_json(
-            except: [ :created_at, :updated_at, :user_id, :person_tag ],
-            include: { person: { only: [ :id, :name, :color ] } }
-          )
-        }
+        format.html { redirect_to dashboard_path, notice: "URL updated." }
+        format.json { render json: @monitored_url.reload.public_json }
       end
     else
-      respond_to do |format|
-        format.html { redirect_to monitored_urls_path, alert: "Failed to update URL." }
-        format.json { render json: { errors: @monitored_url.errors.full_messages }, status: :unprocessable_entity }
-      end
+      render_errors
     end
   end
 
   def destroy
-    @monitored_url.destroy
-
+    @monitored_url.destroy!
     respond_to do |format|
-      format.html { redirect_to monitored_urls_path, notice: "URL removed successfully." }
-      format.json { head :ok }
+      format.html { redirect_to dashboard_path, notice: "URL removed." }
+      format.json { head :no_content }
     end
   end
 
   def check_now
-    # Perform the check synchronously so we can return updated data
-    UrlCheckJob.perform_now(@monitored_url.id)
-
-    # Reload to get the updated data
-    @monitored_url.reload
-
-    respond_to do |format|
-      format.html { redirect_to monitored_urls_path, notice: "Checking URL now..." }
-      format.json { render json: @monitored_url.as_json(include: :person) }
+    result = @monitored_url.request_check!(manual: true)
+    case result
+    when :queued, :busy
+      render json: @monitored_url.reload.public_json, status: :accepted
+    when :cooldown
+      render json: { errors: [ "Please wait five minutes between manual checks." ] }, status: :too_many_requests
+    else
+      render json: { errors: [ "This tournament is inactive or its start date has passed." ] }, status: :unprocessable_entity
     end
   end
 
@@ -99,5 +81,12 @@ class MonitoredUrlsController < ApplicationController
 
   def monitored_url_params
     params.require(:monitored_url).permit(:url, :name, :notification_email, :active, :tournament_start_date, :sport, :person_id)
+  end
+
+  def render_errors
+    respond_to do |format|
+      format.html { redirect_to dashboard_path, alert: @monitored_url.errors.full_messages.join(", ") }
+      format.json { render json: { errors: @monitored_url.errors.full_messages }, status: :unprocessable_entity }
+    end
   end
 end

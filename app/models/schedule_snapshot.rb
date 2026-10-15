@@ -4,6 +4,6 @@ class ScheduleSnapshot < ApplicationRecord
   validates :content_hash, presence: true
   validates :checked_at, presence: true
 
-  scope :ordered, -> { order(checked_at: :desc) }
+  scope :ordered, -> { order(checked_at: :desc, id: :desc) }
   scope :with_changes, -> { where(changes_detected: true) }
 end

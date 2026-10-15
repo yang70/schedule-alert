@@ -1,8 +1,16 @@
+<script>
+import { daysUntilTournament, safeScheduleLink } from '../date_utils.mjs'
+import ModalDialog from './ModalDialog.vue'
+import NotificationHistory from './NotificationHistory.vue'
+
 export default {
   name: 'Dashboard',
+  components: { ModalDialog, NotificationHistory },
   data() {
     return {
       monitoredUrls: [],
+      recentEvents: [],
+      loadError: '',
       people: [],
       loading: true,
       checkingUrls: new Set(),
@@ -64,6 +72,13 @@ export default {
   },
   mounted() {
     this.loadData()
+    this.pollTimer = setInterval(() => {
+      if (document.visibilityState === 'visible') this.loadData()
+    }, 15000)
+  },
+  beforeUnmount() {
+    clearInterval(this.pollTimer)
+    clearTimeout(this.successTimer)
   },
   methods: {
     toggleCardCollapse(urlId) {
@@ -72,6 +87,12 @@ export default {
     isCardCollapsed(urlId) {
       return this.collapsedCards[urlId] !== false
     },
+    async readResponse(response) {
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.errors?.join(', ') || 'Unable to load data. Please sign in again or retry.')
+      return data
+    },
+    safeScheduleLink,
     async loadData() {
       try {
         const [urlsResponse, peopleResponse] = await Promise.all([
@@ -79,10 +100,13 @@ export default {
           fetch('/people.json')
         ])
 
-        const urlsData = await urlsResponse.json()
+        const urlsData = await this.readResponse(urlsResponse)
         this.monitoredUrls = urlsData.monitored_urls || []
+        this.recentEvents = urlsData.recent_events || []
+        this.checkingUrls = new Set(this.monitoredUrls.filter(url => ['queued', 'running'].includes(url.check_status)).map(url => url.id))
+        this.loadError = ''
 
-        const peopleData = await peopleResponse.json()
+        const peopleData = await this.readResponse(peopleResponse)
         this.people = peopleData || []
 
         // Initialize all cards as collapsed
@@ -94,7 +118,7 @@ export default {
 
         this.loading = false
       } catch (error) {
-        console.error('Error loading data:', error)
+        this.loadError = error.message
         this.loading = false
       }
     },
@@ -120,11 +144,12 @@ export default {
           this.loadData()
           this.formCollapsed = true
           this.showSuccessBanner = true
-          setTimeout(() => {
+          this.successTimer = setTimeout(() => {
             this.showSuccessBanner = false
           }, 5000)
         } else {
-          alert('Failed to add URL')
+          const data = await response.json()
+          alert(data.errors?.join(', ') || 'Failed to add URL')
         }
       } catch (error) {
         console.error('Error adding URL:', error)
@@ -156,7 +181,8 @@ export default {
         if (response.ok) {
           this.loadData()
         } else {
-          alert('Failed to remove URL')
+          const data = await response.json()
+          alert(data.errors?.join(', ') || 'Failed to remove URL')
         }
       } catch (error) {
         console.error('Error removing URL:', error)
@@ -215,7 +241,8 @@ export default {
           this.loadData()
           this.cancelEdit()
         } else {
-          alert('Failed to update URL')
+          const data = await response.json()
+          alert(data.errors?.join(', ') || 'Failed to update URL')
         }
       } catch (error) {
         console.error('Error updating URL:', error)
@@ -270,37 +297,26 @@ export default {
       return ''
     },
     async checkNow(id) {
+      this.checkingUrls.add(id)
       try {
-        this.checkingUrls.add(id)
         const response = await fetch(`/monitored_urls/${id}/check_now`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
             'Accept': 'application/json',
             'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
           }
         })
-
-        if (response.ok) {
-          const data = await response.json()
-          // Update the specific URL in our list
-          const index = this.monitoredUrls.findIndex(url => url.id === id)
-          if (index !== -1) {
-            this.monitoredUrls[index] = data
-          }
-        } else {
-          alert('Failed to check URL')
-        }
+        const data = await this.readResponse(response)
+        const index = this.monitoredUrls.findIndex(url => url.id === id)
+        if (index !== -1) this.monitoredUrls[index] = data
       } catch (error) {
-        console.error('Error checking URL:', error)
-        alert('Error checking URL')
-      } finally {
         this.checkingUrls.delete(id)
+        alert(error.message)
       }
     },
     formatDate(dateString) {
       if (!dateString) return 'Never'
-      return new Date(dateString).toLocaleString()
+      return new Date(dateString).toLocaleString(undefined, { timeZone: 'America/Los_Angeles', timeZoneName: 'short' })
     },
     formatSimpleDate(dateString) {
       if (!dateString) return 'Not set'
@@ -308,35 +324,19 @@ export default {
       const [year, month, day] = dateString.split('-').map(Number)
       return new Date(year, month - 1, day).toLocaleDateString()
     },
-    daysUntilTournament(tournamentDate) {
-      if (!tournamentDate) return null
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      // Parse date as local time to avoid timezone shift
-      const [year, month, day] = tournamentDate.split('-').map(Number)
-      const tournament = new Date(year, month - 1, day)
-      tournament.setHours(0, 0, 0, 0)
-      const diffTime = tournament - today
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      return diffDays
-    },
-    getCheckFrequency(tournamentDate) {
-      const days = this.daysUntilTournament(tournamentDate)
-      if (days === null || days < 0) return 'Not scheduled'
-      if (new Date().getDay() === 2) return '6x today (10am, 10:45am, 11:30am, 12:15pm, 1pm, 5pm PT)'
-      if (days <= 1) return '5x daily (9am, 12pm, 3pm, 6pm, 10pm PT)'
-      if (days <= 4) return '4x daily (9am, 12pm, 5pm, 10pm PT)'
-      if (days <= 7) return '3x daily (9am, 3pm, 10pm PT)'
-      if (days <= 13) return '2x daily (10am, 10pm PT)'
-      return 'Once daily (10am PT)'
+    daysUntilTournament,
+    getCheckFrequency(url) {
+      return url.check_frequency || 'Not scheduled'
     }
-  },
-  template: `
+  }
+}
+</script>
+<template>
     <div>
+      <div v-if="loadError" class="alert alert-danger" role="alert">{{ loadError }} <button @click="loadData">Retry</button></div>
       <!-- Delete Confirmation Modal -->
-      <div v-if="deleteConfirmation.show" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;" @click.self="cancelDelete">
-        <div style="background: white; border-radius: var(--radius-lg); padding: 2rem; max-width: 500px; box-shadow: var(--shadow-lg);">
-          <h3 style="margin: 0 0 1rem 0; color: var(--text-primary);">
+      <ModalDialog v-if="deleteConfirmation.show" labelled-by="delete-dialog-title" @close="cancelDelete">
+          <h3 id="delete-dialog-title" style="margin: 0 0 1rem 0; color: var(--text-primary);">
             <i class="bi bi-exclamation-triangle" style="color: var(--accent-color);"></i> Confirm Deletion
           </h3>
           <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
@@ -350,23 +350,21 @@ export default {
               <i class="bi bi-trash"></i> Delete
             </button>
           </div>
-        </div>
-      </div>
+      </ModalDialog>
 
       <!-- Create Person Modal -->
-      <div v-if="showPersonModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;" @click.self="closePersonModal">
-        <div style="background: white; border-radius: var(--radius-lg); padding: 2rem; max-width: 500px; width: 90%; box-shadow: var(--shadow-lg);">
-          <h3 style="margin: 0 0 1.5rem 0; color: var(--text-primary);">
+      <ModalDialog v-if="showPersonModal" labelled-by="person-dialog-title" @close="closePersonModal">
+          <h3 id="person-dialog-title" style="margin: 0 0 1.5rem 0; color: var(--text-primary);">
             <i class="bi bi-person-plus"></i> Create New Person
           </h3>
           <div style="margin-bottom: 1.5rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Person Name <span style="color: var(--accent-color);">*</span></label>
-            <input v-model="newPerson.name" type="text" placeholder="e.g., John, Sarah's Team" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+            <label for="newPerson-name" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Person Name <span style="color: var(--accent-color);">*</span></label>
+            <input id="newPerson-name" v-model="newPerson.name" type="text" placeholder="e.g., John, Sarah's Team" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
           </div>
           <div style="margin-bottom: 1.5rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Color</label>
+            <label for="newPerson-color" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Color</label>
             <div style="display: flex; gap: 0.75rem; align-items: center;">
-              <input v-model="newPerson.color" type="color" style="width: 80px; height: 40px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
+              <input id="newPerson-color" v-model="newPerson.color" type="color" style="width: 80px; height: 40px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
               <span style="color: var(--text-secondary); font-size: 0.875rem;">{{ newPerson.color }}</span>
               <div :style="{flex: 1, padding: '0.5rem 1rem', backgroundColor: newPerson.color, color: 'white', borderRadius: 'var(--radius-sm)', textAlign: 'center', fontSize: '0.875rem', fontWeight: 500}">
                 Preview
@@ -381,8 +379,7 @@ export default {
               <i class="bi bi-plus-circle"></i> Create Person
             </button>
           </div>
-        </div>
-      </div>
+      </ModalDialog>
 
       <!-- Success Banner -->
       <transition name="fade">
@@ -395,9 +392,11 @@ export default {
         </div>
       </transition>
 
+      <NotificationHistory :events="recentEvents" />
+
       <!-- Add New URL Form -->
       <div class="add-url-form">
-        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" @click="formCollapsed = !formCollapsed">
+        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" role="button" tabindex="0" :aria-expanded="!formCollapsed" @keydown.enter.prevent="formCollapsed = !formCollapsed" @keydown.space.prevent="formCollapsed = !formCollapsed" @click="formCollapsed = !formCollapsed">
           <h2 style="margin: 0;">➕ Add New Schedule to Monitor</h2>
           <i :class="formCollapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up'" style="font-size: 1.5rem; color: var(--primary-color);"></i>
         </div>
@@ -405,24 +404,24 @@ export default {
           <form v-show="!formCollapsed" @submit.prevent="addUrl" style="margin-top: 1.5rem; padding: 1.5rem; background: var(--bg-color); border-radius: var(--radius-md);">
           <div style="display: grid; gap: 1rem;">
             <div class="form-group" style="margin-bottom: 0;">
-              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Name/Description <span style="color: var(--accent-color);">*</span></label>
-              <input v-model="newUrl.name" type="text" placeholder="e.g., Spring Tournament 2026" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+              <label for="newUrl-name" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Name/Description <span style="color: var(--accent-color);">*</span></label>
+              <input id="newUrl-name" v-model="newUrl.name" type="text" placeholder="e.g., Spring Tournament 2026" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
             </div>
             <div class="form-group" style="margin-bottom: 0;">
-              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Tournament URL <span style="color: var(--accent-color);">*</span></label>
-              <input v-model="newUrl.url" type="url" placeholder="https://..." required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+              <label for="newUrl-url" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Tournament URL <span style="color: var(--accent-color);">*</span></label>
+              <input id="newUrl-url" v-model="newUrl.url" type="url" placeholder="https://..." required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
             </div>
             <div class="form-group" style="margin-bottom: 0;">
-              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Tournament Start Date <span style="color: var(--accent-color);">*</span></label>
-              <input v-model="newUrl.tournament_start_date" type="date" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+              <label for="newUrl-tournament_start_date" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Tournament Start Date <span style="color: var(--accent-color);">*</span></label>
+              <input id="newUrl-tournament_start_date" v-model="newUrl.tournament_start_date" type="date" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
               <small style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-top: 0.5rem;">
                 <i class="bi bi-info-circle"></i> Check frequency adjusts automatically based on proximity
               </small>
             </div>
             <div class="form-group" style="margin-bottom: 0;">
-              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Player/Person Tag <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
+              <label for="newUrl-person_id" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Player/Person Tag <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
               <div style="display: flex; gap: 0.5rem;">
-                <select v-model="newUrl.person_id" style="flex: 1; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; background: white; cursor: pointer; transition: border-color 0.2s;">
+                <select id="newUrl-person_id" v-model="newUrl.person_id" style="flex: 1; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; background: white; cursor: pointer; transition: border-color 0.2s;">
                   <option value="">Select a person</option>
                   <option v-for="person in people" :key="person.id" :value="person.id">{{ person.name }}</option>
                 </select>
@@ -432,8 +431,8 @@ export default {
               </div>
             </div>
             <div class="form-group" style="margin-bottom: 0;">
-              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Sport <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
-              <select v-model="newUrl.sport" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; background: white; cursor: pointer; transition: border-color 0.2s;">
+              <label for="newUrl-sport" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Sport <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
+              <select id="newUrl-sport" v-model="newUrl.sport" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; background: white; cursor: pointer; transition: border-color 0.2s;">
                 <option value="">Select a sport</option>
                 <option value="baseball">⚾ Baseball</option>
                 <option value="softball">🥎 Softball</option>
@@ -441,8 +440,8 @@ export default {
               </select>
             </div>
             <div class="form-group" style="margin-bottom: 0;">
-              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Notification Email <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
-              <input v-model="newUrl.notification_email" type="email" placeholder="Leave empty to use account email" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+              <label for="newUrl-notification_email" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Notification Email <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
+              <input id="newUrl-notification_email" v-model="newUrl.notification_email" type="email" placeholder="Leave empty to use account email" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
             </div>
           </div>
           <button type="submit" class="btn-primary" style="margin-top: 1.5rem; padding: 0.75rem 1.5rem; width: 100%; font-weight: 600;">
@@ -476,21 +475,21 @@ export default {
               </h3>
               <div style="display: grid; gap: 1rem;">
                 <div class="form-group" style="margin-bottom: 0;">
-                  <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Name/Description <span style="color: var(--accent-color);">*</span></label>
-                  <input v-model="editUrl.name" type="text" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+                  <label for="editUrl-name" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Name/Description <span style="color: var(--accent-color);">*</span></label>
+                  <input id="editUrl-name" v-model="editUrl.name" type="text" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
-                  <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Tournament URL <span style="color: var(--accent-color);">*</span></label>
-                  <input v-model="editUrl.url" type="url" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+                  <label for="editUrl-url" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Tournament URL <span style="color: var(--accent-color);">*</span></label>
+                  <input id="editUrl-url" v-model="editUrl.url" type="url" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
-                  <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Tournament Start Date <span style="color: var(--accent-color);">*</span></label>
-                  <input v-model="editUrl.tournament_start_date" type="date" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+                  <label for="editUrl-tournament_start_date" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Tournament Start Date <span style="color: var(--accent-color);">*</span></label>
+                  <input id="editUrl-tournament_start_date" v-model="editUrl.tournament_start_date" type="date" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
-                  <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Player/Person Tag <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
+                  <label for="editUrl-person_id" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Player/Person Tag <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
                   <div style="display: flex; gap: 0.5rem;">
-                    <select v-model="editUrl.person_id" style="flex: 1; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; background: white; cursor: pointer; transition: border-color 0.2s;">
+                    <select id="editUrl-person_id" v-model="editUrl.person_id" style="flex: 1; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; background: white; cursor: pointer; transition: border-color 0.2s;">
                       <option value="">Select a person</option>
                       <option v-for="person in people" :key="person.id" :value="person.id">{{ person.name }}</option>
                     </select>
@@ -500,8 +499,8 @@ export default {
                   </div>
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
-                  <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Sport <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
-                  <select v-model="editUrl.sport" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; background: white; cursor: pointer; transition: border-color 0.2s;">
+                  <label for="editUrl-sport" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Sport <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
+                  <select id="editUrl-sport" v-model="editUrl.sport" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; background: white; cursor: pointer; transition: border-color 0.2s;">
                     <option value="">Select a sport</option>
                     <option value="baseball">⚾ Baseball</option>
                     <option value="softball">🥎 Softball</option>
@@ -509,8 +508,8 @@ export default {
                   </select>
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
-                  <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Notification Email <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
-                  <input v-model="editUrl.notification_email" type="email" placeholder="Leave empty to use account email" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
+                  <label for="editUrl-notification_email" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Notification Email <span style="font-size: 0.875rem; color: var(--text-light); font-weight: 400;">(optional)</span></label>
+                  <input id="editUrl-notification_email" v-model="editUrl.notification_email" type="email" placeholder="Leave empty to use account email" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;">
                 </div>
               </div>
               <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
@@ -526,7 +525,7 @@ export default {
             <!-- Display Mode -->
             <div v-else>
               <!-- Collapsed Header (always visible) -->
-              <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; cursor: pointer;" @click="toggleCardCollapse(url.id)">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; cursor: pointer;" role="button" tabindex="0" :aria-expanded="!isCardCollapsed(url.id)" @keydown.enter.prevent="toggleCardCollapse(url.id)" @keydown.space.prevent="toggleCardCollapse(url.id)" @click="toggleCardCollapse(url.id)">
                 <div style="flex: 1; min-width: 0;">
                   <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                     <span v-if="url.sport" style="font-size: 1.5rem;">{{ getSportEmoji(url.sport) }}</span>
@@ -549,12 +548,14 @@ export default {
                 </div>
               </div>
 
+              <p v-if="url.last_error" class="check-error" role="status">{{ url.last_error }}</p>
+              <p v-if="['queued', 'running'].includes(url.check_status)" role="status">{{ url.check_status === 'queued' ? 'Check queued' : 'Checking schedule…' }}</p>
               <!-- Expanded Content -->
               <Transition name="expand">
               <div v-show="!isCardCollapsed(url.id)" style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid rgba(0, 0, 0, 0.08);">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem;">
                   <div style="flex: 1;">
-                    <a :href="url.url" target="_blank" rel="noopener" style="display: inline-block; margin-bottom: 1.25rem; padding: 0.5rem 1rem; background: var(--primary-color); color: white; text-decoration: none; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 500; transition: all 0.2s;" @mouseover="$event.target.style.opacity='0.9'" @mouseout="$event.target.style.opacity='1'" @click.stop>
+                    <a :href="safeScheduleLink(url.url)" target="_blank" rel="noopener" style="display: inline-block; margin-bottom: 1.25rem; padding: 0.5rem 1rem; background: var(--primary-color); color: white; text-decoration: none; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 500; transition: all 0.2s;" @mouseover="$event.target.style.opacity='0.9'" @mouseout="$event.target.style.opacity='1'" @click.stop>
                       <i class="bi bi-link-45deg"></i> Link to schedule
                     </a>
 
@@ -562,15 +563,15 @@ export default {
                       <div style="display: grid; gap: 0.625rem; font-size: 0.875rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                           <span style="color: var(--text-secondary); font-weight: 400;">Check Frequency</span>
-                          <span style="color: var(--primary-color); font-weight: 500;">{{ getCheckFrequency(url.tournament_start_date) }}</span>
+                          <span style="color: var(--primary-color); font-weight: 500;">{{ getCheckFrequency(url) }}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                           <span style="color: var(--text-secondary); font-weight: 400;">Next Check</span>
-                          <span style="color: var(--text-color); font-weight: 400;">{{ formatDate(url.next_check_at) }}</span>
+                          <span style="color: var(--text-primary); font-weight: 400;">{{ formatDate(url.next_check_at) }}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                           <span style="color: var(--text-secondary); font-weight: 400;">Last Checked</span>
-                          <span style="color: var(--text-color); font-weight: 400;">{{ formatDate(url.last_checked_at) }}</span>
+                          <span style="color: var(--text-primary); font-weight: 400;">{{ formatDate(url.last_checked_at) }}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                           <span style="color: var(--text-secondary); font-weight: 400;">Status</span>
@@ -579,7 +580,7 @@ export default {
                         </div>
                         <div v-if="url.notification_email" style="display: flex; justify-content: space-between; align-items: center;">
                           <span style="color: var(--text-secondary); font-weight: 400;">Notifications</span>
-                          <span style="color: var(--text-color); font-weight: 400; font-size: 0.8125rem;">{{ url.notification_email }}</span>
+                          <span style="color: var(--text-primary); font-weight: 400; font-size: 0.8125rem;">{{ url.notification_email }}</span>
                         </div>
                       </div>
                     </div>
@@ -607,7 +608,7 @@ export default {
 
         <!-- Past Tournaments -->
         <div v-if="pastUrls.length > 0" style="margin-top: 2rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 1.5rem;" @click="pastCollapsed = !pastCollapsed">
+          <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 1.5rem;" role="button" tabindex="0" :aria-expanded="!pastCollapsed" @keydown.enter.prevent="pastCollapsed = !pastCollapsed" @keydown.space.prevent="pastCollapsed = !pastCollapsed" @click="pastCollapsed = !pastCollapsed">
             <h2 style="margin: 0; font-size: 1.5rem; font-weight: 600; color: var(--text-secondary);">
               <i class="bi bi-calendar-x"></i> Past Tournaments ({{ pastUrls.length }})
             </h2>
@@ -616,7 +617,7 @@ export default {
           <div v-show="!pastCollapsed">
             <div v-for="url in pastUrls" :key="url.id" class="url-card" style="opacity: 0.8;">
               <!-- Collapsed Header (always visible) -->
-              <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; cursor: pointer;" @click="toggleCardCollapse(url.id)">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; cursor: pointer;" role="button" tabindex="0" :aria-expanded="!isCardCollapsed(url.id)" @keydown.enter.prevent="toggleCardCollapse(url.id)" @keydown.space.prevent="toggleCardCollapse(url.id)" @click="toggleCardCollapse(url.id)">
                 <div style="flex: 1; min-width: 0;">
                   <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                     <span v-if="url.sport" style="font-size: 1.5rem;">{{ getSportEmoji(url.sport) }}</span>
@@ -639,12 +640,14 @@ export default {
                 </div>
               </div>
 
+              <p v-if="url.last_error" class="check-error" role="status">{{ url.last_error }}</p>
+              <p v-if="['queued', 'running'].includes(url.check_status)" role="status">{{ url.check_status === 'queued' ? 'Check queued' : 'Checking schedule…' }}</p>
               <!-- Expanded Content -->
               <Transition name="expand">
               <div v-show="!isCardCollapsed(url.id)" style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid rgba(0, 0, 0, 0.08);">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem;">
                   <div style="flex: 1;">
-                    <a :href="url.url" target="_blank" rel="noopener" style="display: inline-block; margin-bottom: 1.25rem; padding: 0.5rem 1rem; background: var(--primary-color); color: white; text-decoration: none; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 500; transition: all 0.2s;" @mouseover="$event.target.style.opacity='0.9'" @mouseout="$event.target.style.opacity='1'" @click.stop>
+                    <a :href="safeScheduleLink(url.url)" target="_blank" rel="noopener" style="display: inline-block; margin-bottom: 1.25rem; padding: 0.5rem 1rem; background: var(--primary-color); color: white; text-decoration: none; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 500; transition: all 0.2s;" @mouseover="$event.target.style.opacity='0.9'" @mouseout="$event.target.style.opacity='1'" @click.stop>
                       <i class="bi bi-link-45deg"></i> Link to schedule
                     </a>
 
@@ -652,7 +655,7 @@ export default {
                       <div style="display: grid; gap: 0.625rem; font-size: 0.875rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                           <span style="color: var(--text-secondary); font-weight: 400;">Last Checked</span>
-                          <span style="color: var(--text-color); font-weight: 400;">{{ formatDate(url.last_checked_at) }}</span>
+                          <span style="color: var(--text-primary); font-weight: 400;">{{ formatDate(url.last_checked_at) }}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                           <span style="color: var(--text-secondary); font-weight: 400;">Status</span>
@@ -661,7 +664,7 @@ export default {
                         </div>
                         <div v-if="url.notification_email" style="display: flex; justify-content: space-between; align-items: center;">
                           <span style="color: var(--text-secondary); font-weight: 400;">Notifications</span>
-                          <span style="color: var(--text-color); font-weight: 400; font-size: 0.8125rem;">{{ url.notification_email }}</span>
+                          <span style="color: var(--text-primary); font-weight: 400; font-size: 0.8125rem;">{{ url.notification_email }}</span>
                         </div>
                       </div>
                     </div>
@@ -680,5 +683,5 @@ export default {
         </div>
       </div>
     </div>
-  `
-}
+
+</template>

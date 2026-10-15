@@ -1,0 +1,11 @@
+<h1><%= @released ? "Schedule Now Available!" : "Schedule Updated!" %></h1>
+<p><strong><%= @payload.fetch("name") %></strong></p>
+<%= simple_format h(@payload.fetch("summary")) %>
+<p><%= link_to "View the source schedule", safe_external_url(@payload.fetch("url")) %></p>
+<% if @released %>
+  <% @payload.fetch("evidence", []).each do |item| %>
+    <blockquote><%= item["quote"] %></blockquote>
+  <% end %>
+<% end %>
+<p>Checked at: <%= @checked_at.strftime("%B %d, %Y at %I:%M %p %Z") %></p>
+<p>You’re receiving this email because this address was selected for a TourneyPing schedule. Manage monitored URLs from your dashboard.</p>

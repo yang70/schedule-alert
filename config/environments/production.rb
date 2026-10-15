@@ -16,13 +16,13 @@ Rails.application.configure do
   config.action_controller.perform_caching = true
 
   # Cache assets for far-future expiry since they are all digest stamped.
+  config.public_file_server.enabled = true
   config.public_file_server.headers = { "cache-control" => "public, max-age=#{1.year.to_i}" }
 
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
 
   # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service = :local
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   config.assume_ssl = true
@@ -57,30 +57,7 @@ Rails.application.configure do
   # config.action_mailer.raise_delivery_errors = false
 
   # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST", "example.com") }
-
-  # Only configure SMTP if Resend API key is present
-  if ENV["RESEND_API_KEY"].present?
-    config.action_mailer.delivery_method = :smtp
-    config.action_mailer.smtp_settings = {
-      address: "smtp.resend.com",
-      port: 587,
-      domain: ENV.fetch("SMTP_DOMAIN", "example.com"),
-      user_name: "resend",
-      password: ENV["RESEND_API_KEY"],
-      authentication: "plain",
-      enable_starttls_auto: true
-    }
-  end
-
-  # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
-  # config.action_mailer.smtp_settings = {
-  #   user_name: Rails.application.credentials.dig(:smtp, :user_name),
-  #   password: Rails.application.credentials.dig(:smtp, :password),
-  #   address: "smtp.example.com",
-  #   port: 587,
-  #   authentication: :plain
-  # }
+  config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST", "tourneyping.com"), protocol: "https" }
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).
@@ -93,12 +70,7 @@ Rails.application.configure do
   config.active_record.attributes_for_inspect = [ :id ]
 
   # Enable DNS rebinding protection and other `Host` header attacks.
-  config.hosts = [
-    "tourneyping.com",     # Allow requests from tourneyping.com
-    "www.tourneyping.com", # Allow requests from www subdomain
-    /.*\.tourneyping\.com/, # Allow requests from any subdomain
-    "44.226.63.157"        # Temporarily allow direct IP access
-  ]
+  config.hosts = ENV.fetch("APP_HOST", "tourneyping.com").split(",").flat_map { |host| [ host.strip, "www.#{host.strip}" ] }
 
   # Skip DNS rebinding protection for the default health check endpoint.
   config.host_authorization = { exclude: ->(request) { request.path == "/up" } }

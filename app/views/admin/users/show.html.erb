@@ -64,13 +64,13 @@
           <% @monitored_urls.each do |monitored_url| %>
             <tr>
               <td><%= monitored_url.name %></td>
-              <td><%= link_to monitored_url.url, monitored_url.url, target: "_blank", rel: "noopener noreferrer", class: "url-link" %></td>
+              <td><%= link_to monitored_url.url, safe_external_url(monitored_url.url), target: "_blank", rel: "noopener noreferrer", class: "url-link" %></td>
               <td><%= monitored_url.sport %></td>
               <td><%= monitored_url.tournament_start_date %></td>
               <td><%= monitored_url.active? ? "Yes" : "No" %></td>
               <td><%= monitored_url.schedule_available? ? "Yes" : "No" %></td>
               <td><%= monitored_url.last_checked_at&.strftime("%b %-d, %Y %-l:%M %p") || "Never" %></td>
-              <td><%= monitored_url.schedule_snapshots.size %></td>
+              <td><%= monitored_url.snapshots_count %></td>
             </tr>
           <% end %>
         </tbody>

@@ -1,0 +1,2 @@
+class MonitoringError < StandardError
+end
