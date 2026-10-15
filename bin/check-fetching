@@ -12,11 +12,21 @@ fixture = Thread.new do
     socket = server.accept
     begin
       request = socket.gets
-      while (header = socket.gets) && header != "\r\n"; end
+      headers_received = []
+      while (header = socket.gets) && header != "\r\n"
+        headers_received << header
+      end
       path = request.to_s.split(" ")[1]
       status = 200
       headers = "Content-Type: text/html\r\n"
       body = case path
+      when "/browser-schedule"
+        if headers_received.any? { |header| header.match?(/User-Agent:.*HeadlessChrome/i) }
+          status = 403
+          "You do not have permission to view this page."
+        else
+          '<html><body><main>October 17, 2026<table><tr><td>10:00 AM</td><td>Falcons vs TBD</td></tr></table></main></body></html>'
+        end
       when "/schedule"
         '<html><body><main><h1>October 17, 2026</h1><iframe src="/embedded"></iframe><a href="/schedule.pdf">Schedule PDF</a><iframe src="http://169.254.169.254/latest/meta-data/"></iframe></main></body></html>'
       when "/embedded"
@@ -68,6 +78,8 @@ begin
   TCPSocket.stub(:open, tcp_open) do
     Socket.stub(:tcp, connect) do
     Resolv.stub(:getaddresses, resolve) do
+      compatible = ScheduleFetcher.new.fetch("http://fixture.example.com/browser-schedule")
+      abort "Browser user agent was rejected" unless compatible.complete && compatible.text.include?("10:00 AM Falcons vs TBD")
       result = ScheduleFetcher.new.fetch("http://fixture.example.com/schedule")
       abort "Embedded timetable was missed" unless result.text.include?("10:00 AM Falcons vs TBD")
       abort "Linked PDF was missed" unless result.text.include?("Tournament schedule 2026-10-17")
@@ -85,7 +97,7 @@ begin
     end
   end
   abort "No pinned connections were observed" if connections.empty?
-  puts "Real Chrome, visible iframe content, linked/direct PDF, DNS pinning and private redirect checks passed"
+  puts "Real Chrome user-agent compatibility, visible iframe content, linked/direct PDF, DNS pinning and private redirect checks passed"
 ensure
   server.close
   fixture.join(1)

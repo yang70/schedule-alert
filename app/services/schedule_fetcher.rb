@@ -1,5 +1,6 @@
 class ScheduleFetcher
   Result = Data.define(:text, :complete)
+  TELEMETRY_DOMAINS = %w[google-analytics.com analytics.google.com googleadservices.com].freeze
 
   def fetch(url)
     uri = PublicUrl.parse!(url)
@@ -18,10 +19,13 @@ class ScheduleFetcher
           "host-resolver-rules" => "MAP * ~NOTFOUND, EXCLUDE 127.0.0.1"
         }
       )
+      # Some public providers reject Chrome's headless-specific user agent.
+      # Keep the installed browser's version rather than freezing a fake version.
+      browser.headers.set("User-Agent" => browser.default_user_agent.sub("HeadlessChrome/", "Chrome/"))
       browser.goto(url)
       idle = browser.network.wait_for_idle(connections: 2, duration: 0.5, timeout: 8)
       response = browser.network.response
-      raise MonitoringError, "The schedule page could not be loaded" unless response && response.status.between?(200, 299)
+      validate_response!(response)
       PublicUrl.parse!(browser.url)
       if response.headers.any? { |name, value| name.downcase == "content-type" && value.include?("application/pdf") }
         return Result.new(text: pdf_content(browser.url), complete: true)
@@ -30,8 +34,7 @@ class ScheduleFetcher
       page = PageContentExtractor.new.extract(visible_html(browser), browser.url)
       pieces = [ page[:text] ]
       failed_data_request = browser.network.traffic.any? do |exchange|
-        exchange.request && %w[Document XHR Fetch].include?(exchange.request.type) &&
-          (exchange.error || (exchange.response && exchange.response.status >= 400))
+        failed_data_request?(exchange)
       end
       complete = page[:complete] && idle && !failed_data_request
       page[:frame_urls].each do |frame_url|
@@ -74,6 +77,38 @@ class ScheduleFetcher
   end
 
   private
+
+  def validate_response!(response)
+    raise MonitoringError, "The schedule page did not return a response" unless response
+    return if response.status.between?(200, 299)
+
+    message = case response.status
+    when 401, 403
+      "The schedule provider denied access (HTTP #{response.status}). It may require a login or block automated checks."
+    when 429
+      "The schedule provider is rate limiting checks (HTTP 429). Try again later."
+    else
+      "The schedule page returned HTTP #{response.status}. It may be temporarily unavailable."
+    end
+    raise MonitoringError, message
+  end
+
+  def failed_data_request?(exchange)
+    request = exchange.request
+    return false unless request && %w[Document XHR Fetch].include?(request.type)
+    # Analytics beacons can be canceled after a successful response. Their
+    # delivery does not affect whether the timetable was completely loaded.
+    if request.type != "Document"
+      return false if exchange.response && [ 204, 205 ].include?(exchange.response.status)
+      uri = URI.parse(request.url)
+      host = uri.hostname.to_s.downcase
+      return false if TELEMETRY_DOMAINS.any? { |domain| host == domain || host.end_with?(".#{domain}") }
+      return false if host == "www.google.com" && uri.path.start_with?("/measurement/")
+    end
+    exchange.error || (exchange.response && exchange.response.status >= 400)
+  rescue URI::InvalidURIError
+    true
+  end
 
   def visible_html(frame)
     frame.evaluate(<<~JAVASCRIPT)

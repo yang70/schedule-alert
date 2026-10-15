@@ -62,3 +62,9 @@ Deployed application revision `af153b6` to the existing Lightsail/systemd host o
 The host was upgraded from Node 20 to Node 22, Linux gem variants were added to the lockfile, the monitoring migration was applied, and the existing owner account received the explicit admin role. Web and worker services were restarted with the updated units. The existing Nginx TLS configuration was preserved while its upstream changed from the former Unix socket to local TCP port 3000.
 
 Public HTTPS health, the home page, and compiled JavaScript/CSS returned HTTP 200. Web, worker, and Nginx services were active; all three scheduled jobs were registered. PDF parsing and a sandboxed Chrome fetch passed on the Linux host. [GitHub CI](https://github.com/yang70/schedule-alert/actions/runs/38676582281) passed for the deployed application revision. Live model accuracy and actual email delivery remain outside these deployment smoke checks.
+
+### Exposure Events compatibility follow-up
+
+An actual manual check revealed that Exposure Events returned HTTP 403 to Chrome's default headless user agent while serving the same public schedule to a standard browser user agent from the same host. Fetching now uses the installed Chrome version's standard user agent. Provider failures report their HTTP status and distinguish denied access from rate limiting. Canceled analytics beacons no longer mark a successfully loaded timetable incomplete; failed game API requests and documents still do.
+
+The affected public schedule loaded completely on the production host with this fix and contained actual game dates and times. The regression suite passed 46 tests with 209 assertions, and the real Chrome fixture passed user-agent rejection, iframe/PDF fetching, DNS pinning, and private redirect checks.
